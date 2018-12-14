@@ -38,52 +38,53 @@ uint8_t bytes_rx;
 char msg[10];
 uint8_t rx_buf[100];	/* First byte used for lenght */
 uint8_t rx_code;
-enum rx_codes {
-	STRING_CODING,
-	BIN_CODING
-};
+enum rx_codes {STRING_CODING, BIN_CODING};
 
-void serialDali(void)
-{
+void serialDali(void) {
 	uint8_t errn;
 
 	if (Serial.available()) {
 		msg[bytes_rx] = (char)Serial.read();
 		if (msg[bytes_rx] == '\n') {
-			if (msg[bytes_rx - 1] == '\r') /* Adjustment protocol */
+			if (msg[bytes_rx - 1] == '\r') { /* Adjustment protocol */
 				msg[bytes_rx - 1] = '\n';
+			}
 			bytes_rx = 0;
 			errn = exeCmd(msg);
-			if (errn == 0)
+			if (errn == 0) {
 				serialDali_rx(0, rx_buf + 1, rx_buf[0]);
-			else if (errn != 0xFF)
+			}
+			else if (errn != 0xFF) {
 				/* 
 				 * Is not an error
 				 * Remap finished do not send anything
 				 */
 				serialDali_rx(errn, NULL, 0);
-		} else if (bytes_rx == 9)
+			}
+		} else if (bytes_rx == 9) {
 			bytes_rx = 0;
-		else
+		} else {
 			bytes_rx++;
+		}
 	}
 }
 
-void serialDali_rx(uint8_t errn, uint8_t * data, uint8_t n)
-{
+void serialDali_rx(uint8_t errn, uint8_t * data, uint8_t n) {
 	uint8_t buf[100];
 	uint8_t n_char = 0;
 
 	if (errn == 0) {
 		buf[0] = 'O';
 		if (rx_code == STRING_CODING) {
-			for (int a = 0; a < n; a++)
+			for (int a = 0; a < n; a++) {
 				n_char +=
 				    sprintf((char *)buf + 1 + n_char, "%d",
 					    (char)(data[a]));
+			}
 		} else if (rx_code == BIN_CODING) {
-			for (int a = 0; a < n; a++)
+			for (int a = 0; a < n; a++) {
 				buf[1 + a] = data[a];
+			}
 			n_char = n;
 		}
 		buf[1 + n_char] = '\r';
@@ -113,13 +114,11 @@ void serialDali_rx(uint8_t errn, uint8_t * data, uint8_t n)
 	}
 }
 
-void Dali_rx(Dali * d, uint8_t * data, uint8_t len)
-{
+void Dali_rx(Dali * d, uint8_t * data, uint8_t len) {
 	serialDali_rx(0, data, 1);
 }
 
-uint8_t exeCmd(char *msg)
-{
+uint8_t exeCmd(char *msg) {
 	switch (msg[0]) {
 	case 'd':
 		return devCmd(msg);
@@ -137,26 +136,28 @@ uint8_t exeCmd(char *msg)
 	return 0x01;	/* Syntax error */
 }
 
-uint8_t devCmd(char *msg)
-{
+uint8_t devCmd(char *msg) {
 	uint8_t bus, dev, arc;
 	char str[] = "00";
 
-	if (msg[2] == '0')
+	if (msg[2] == '0') {
 		bus = 0;
-	else if (msg[2] == '1')
+	} else if (msg[2] == '1') {
 		bus = 1;
-	else
+	} else {
 		return 0x20;
-	if ((Master[bus]->dali_status & 0x01) == 1)
+	}
+	if ((Master[bus]->dali_status & 0x01) == 1) {
 		return 0x03;
+	}
 
 	str[0] = msg[3];
 	str[1] = msg[4];
 	dev = (uint8_t) strtol(str, NULL, 16);
 
-	if (checkSlave(Master[bus], dev) < 0)
+	if (checkSlave(Master[bus], dev) < 0) {
 		return 0x30;
+	}
 
 	switch (msg[1]) {
 	case '1':
@@ -187,17 +188,17 @@ uint8_t devCmd(char *msg)
 	return 0x01;
 }
 
-uint8_t grpCmd(char *msg)
-{
+uint8_t grpCmd(char *msg) {
 	uint8_t bus, grp, arc;
 	char str[] = "0";
 
-	if (msg[2] == '0')
+	if (msg[2] == '0') {
 		bus = 0;
-	else if (msg[2] == '1')
+	} else if (msg[2] == '1') {
 		bus = 1;
-	else
+	} else {
 		return 0x20;
+	}	
 	if ((Master[bus]->dali_status & 0x01) == 1)
 		return 0x03;
 
@@ -223,20 +224,20 @@ uint8_t grpCmd(char *msg)
 	return 0x01;
 }
 
-uint8_t busCmd(char *msg)
-{
+uint8_t busCmd(char *msg) {
 	uint8_t bus, grp, arc;
 	char str[] = "00";
 
-	if (msg[2] == '0')
+	if (msg[2] == '0') {
 		bus = 0;
-	else if (msg[2] == '1')
+	} else if (msg[2] == '1') {
 		bus = 1;
-	else
+	} else {
 		return 0x20;
-	if ((Master[bus]->dali_status & 0x01) == 1)
+	}
+	if ((Master[bus]->dali_status & 0x01) == 1) {
 		return 0x03;
-
+	}
 	switch (msg[1]) {
 	case '1':
 		Master[bus]->sendCommand(5, BROADCAST, grp);	/* ON */
@@ -267,45 +268,50 @@ uint8_t busCmd(char *msg)
 	return 0x01;
 }
 
-uint8_t rmpCmd(char *msg)
-{
+uint8_t rmpCmd(char *msg) {
 	switch (msg[1]) {
 	case '\n':	/* Remap All */
-		if ((Master[0]->dali_status & 0x01) == 1
-		    || (Master[1]->dali_status & 0x01) == 1)
+		if ((Master[0]->dali_status & 0x01) == 1 || (Master[1]->dali_status & 0x01) == 1) {
 			return 0x03;
+		}
 		serialDali_rx(0, NULL, 0);
 		dev_found = 0;
-		for (int i = 0; i < 2; i++)
-			if (Master[i] != NULL)
+		for (int i = 0; i < 2; i++) {
+			if (Master[i] != NULL) {
 				Master[i]->remap(ALL);
+			}
+		}
 		return 0xFF;	/* Remap finished. Do not send anything. */
 
 	case 'u':	/* Remap unknown Dev */
-		if ((Master[0]->dali_status & 0x01) == 1
-		    || (Master[1]->dali_status & 0x01) == 1)
+		if ((Master[0]->dali_status & 0x01) == 1 || (Master[1]->dali_status & 0x01) == 1) {
 			return 0x03;
+		}
 		serialDali_rx(0, NULL, 0);
 		dev_found = 0;
-		for (int i = 0; i < 2; i++)
-			if (Master[i] != NULL)
+		for (int i = 0; i < 2; i++) {
+			if (Master[i] != NULL) {
 				Master[i]->remap(MISS_SHORT);
+			}
+		}
 		return 0xFF;	/* Remap finished. Do not send anything. */
 
 	case 'f':	/* Remap finished? */
-		if ((Master[0]->dali_status & 0x01) == 1
-		    || (Master[1]->dali_status & 0x01) == 1)
+		if ((Master[0]->dali_status & 0x01) == 1 || (Master[1]->dali_status & 0x01) == 1) {
 			rx_buf[1] = (dev_found * 100) / 64;
-		else
+		} else {
 			rx_buf[1] = 100;
+		}
 		rx_buf[0] = 1;
 		rx_code = STRING_CODING;
 		return 0x00;
 
 	case 'A':	/* Remap Abort */
-		for (int i = 0; i < 2; i++)
-			if (Master[i] != NULL)
+		for (int i = 0; i < 2; i++) {
+			if (Master[i] != NULL) {
 				Master[i]->abort_remap();
+			}
+		}
 		rx_buf[0] = 0;
 		return 0x00;
 	}
@@ -313,54 +319,52 @@ uint8_t rmpCmd(char *msg)
 	return 0x01;
 }
 
-void storeSlaves(Dali * dali, uint8_t * slaves)
-{
+void storeSlaves(Dali * dali, uint8_t * slaves) {
 	int base_addr;
 
-	if (dali == Master[0])
+	if (dali == Master[0]) {
 		base_addr = 0x0000;
-	else if (dali == Master[1])
+	} else if (dali == Master[1]) {
 		base_addr = 0x0100;
-	else
+	} else {
 		return;
-
-	for (int i = 0; i < 8; i++)
+	}
+	for (int i = 0; i < 8; i++) {
 		eeprom_write_byte((unsigned char *)(base_addr + i), slaves[i]);
+	}
 }
 
-void retrieveSlaves(Dali * dali, uint8_t * slaves)
-{
+void retrieveSlaves(Dali * dali, uint8_t * slaves) {
 	int base_addr;
 
-	if (dali == Master[0])
+	if (dali == Master[0]) {
 		base_addr = 0x0000;
-	else if (dali == Master[1])
+	} else if (dali == Master[1]){ 
 		base_addr = 0x0100;
-	else
+	} else {
 		return;
-
+	}
 	for (int i = 0; i < 8; i++) {
 		slaves[i] = eeprom_read_byte((unsigned char *)(base_addr + i));
 		dali->slaves[i] = slaves[i];
 	}
 }
 
-int checkSlave(Dali * dali, uint8_t dev)
-{
+int checkSlave(Dali * dali, uint8_t dev) {
 	uint8_t i, j, slaves[8];
 
 	i = dev / 8;
 	j = dev % 8;
 	retrieveSlaves(dali, slaves);
 
-	if ((slaves[i] & (1 << j)) == 1)
+	if ((slaves[i] & (1 << j)) == 1) {
 		return 0;
-	else
+	} else {
 		return -1;
+	}
 }
 
-int infoDev(Dali * dali, uint8_t dev_type, uint8_t dev, uint8_t * info_buf)
-{
+int infoDev(Dali * dali, uint8_t dev_type, uint8_t dev, uint8_t * info_buf) {
 	switch (dev_type) {
 	case LED_MODULE:
 		info_buf[0] = dev_type;

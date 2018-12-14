@@ -123,11 +123,9 @@ void Dali::ISR_timer()
 		if ((bitlen & 0x7) == 0) {
 			uint8_t len = bitlen >> 3;
 			this->rx_int_rq = 0;
-			if (this->EventHandlerReceivedData != NULL)
-				this->EventHandlerReceivedData(this,
-							       (uint8_t *)
-							       this->rx_msg,
-							       len);
+			if (this->EventHandlerReceivedData != NULL){
+				this->EventHandlerReceivedData(this, (uint8_t *)this->rx_msg, len);
+			}
 		}
 	}
 }
@@ -135,31 +133,33 @@ void Dali::ISR_timer()
 /*
  * ISR RX
  */
-
+//pin PCINT
+//0-7 PCINT2_vect PCINT16-23
+//8-13 PCINT0_vect PCINT0-5
+//14-19 PCINT1_vect PCINT8-13
 static Dali *IsrPCINT0Hook;
 static Dali *IsrPCINT1Hook;
 static Dali *IsrPCINT2Hook;
 
-ISR(PCINT0_vect)
-{
-	if (IsrPCINT0Hook != NULL)
+ISR(PCINT0_vect) {
+	if (IsrPCINT0Hook != NULL) {
 		IsrPCINT0Hook->ISR_pinchange();
+	}
 }
 
-ISR(PCINT1_vect)
-{
-	if (IsrPCINT1Hook != NULL)
+ISR(PCINT1_vect) {
+	if (IsrPCINT1Hook != NULL) {
 		IsrPCINT1Hook->ISR_pinchange();
+	}
 }
 
-ISR(PCINT2_vect)
-{
-	if (IsrPCINT2Hook != NULL)
+ISR(PCINT2_vect) {
+	if (IsrPCINT2Hook != NULL) {
 		IsrPCINT2Hook->ISR_pinchange();
+	}
 }
 
-void Dali::ISR_pinchange()
-{
+void Dali::ISR_pinchange() {
 	uint32_t ts = micros();			/* Timestamp pinchange */
 	this->bus_idle_te_cnt = 0;		/* Reset IDLE counter */
 	uint8_t bus_low = DALI_IS_BUS_LOW();
@@ -174,8 +174,9 @@ void Dali::ISR_pinchange()
 		return;
 	}
 	/* Logical bus level unchanged */
-	if (bus_low == this->rx_last_bus_low)
+	if (bus_low == this->rx_last_bus_low){
 		return;
+	}
 
 	/* Logical bus level changed -> store values for analyze the content */
 	uint32_t dt = ts - this->rx_last_change_ts;	/* Period of transmission protocol */
@@ -193,8 +194,9 @@ void Dali::ISR_pinchange()
 			this->rx_state = RX_IDLE;
 		} else {
 			this->rx_len = -1;
-			for (uint8_t i = 0; i < 7; i++)
+			for (uint8_t i = 0; i < 7; i++) {
 				this->rx_msg[0] = 0;
+			}
 			this->rx_state = RX_BIT;
 		}
 		break;
@@ -216,8 +218,7 @@ void Dali::ISR_pinchange()
 	}
 }
 
-void Dali::push_halfbit(uint8_t bit)
-{
+void Dali::push_halfbit(uint8_t bit) {
 	bit = (~bit) & 1;
 	if ((this->rx_len & 1) == 0) {
 		uint8_t i = this->rx_len >> 4;
@@ -232,8 +233,7 @@ void Dali::push_halfbit(uint8_t bit)
  * Dali Class
  */
 
-void Dali::begin(uint8_t tx_pin, uint8_t rx_pin)
-{
+void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 	this->tx_pin = tx_pin;
 	this->rx_pin = rx_pin;
 	this->tx_state = IDLE;
@@ -329,12 +329,15 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin)
 }
 
 uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes) {
-	if (tx_len_bytes > 3)
+	if (tx_len_bytes > 3) {
 		return -1; // Return Error
-	if (this->tx_state != IDLE)
+	}
+	if (this->tx_state != IDLE) {
 		return -1; // Return Error
-	for (uint8_t i = 0; i < tx_len_bytes; i++)
+	}
+	for (uint8_t i = 0; i < tx_len_bytes; i++){
 		this->tx_msg[i] = tx_msg[i];
+	}
 	this->tx_len = tx_len_bytes << 3;
 	this->tx_collision = 0;
 	this->tx_state = START;
@@ -342,22 +345,26 @@ uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes) {
 }
 
 uint8_t Dali::sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_ms) {
-	if (tx_len_bytes > 3)
+	if (tx_len_bytes > 3) {
 		return -1;
+	}
 	uint32_t ts = millis();
 	/* wait for idle */
 	while (this->tx_state != IDLE) {
-		if (millis() - ts > timeout_ms)
+		if (millis() - ts > timeout_ms) {
 			return -1;
+		}
 	}
 	/* start transmit */
-	if (this->send(tx_msg, tx_len_bytes) < 0)
+	if (this->send(tx_msg, tx_len_bytes) < 0) {
 		return -1;
+	}
 	this->rx_int_rq = 1;
 	/* waiting for complete transmission */
 	while (this->tx_state != IDLE){
-		if (millis() - ts > timeout_ms)	/* timeout? */
+		if (millis() - ts > timeout_ms) {	/* timeout? */
 			return -1;
+		}
 	}
 	while (this->rx_int_rq){
 		if (millis() - ts > timeout_ms) {	/* timeout? */
@@ -368,16 +375,14 @@ uint8_t Dali::sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_
 	return 1;
 }
 
-uint8_t Dali::sendwait_int(uint16_t tx_msg, uint32_t timeout_ms)
-{
+uint8_t Dali::sendwait_int(uint16_t tx_msg, uint32_t timeout_ms) {
 	uint8_t m[3];
 	m[0] = tx_msg >> 8;
 	m[1] = tx_msg & 0xff;
 	return sendwait(m, 2, timeout_ms);
 }
 
-uint8_t Dali::sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms)
-{
+uint8_t Dali::sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms) {
 	uint8_t m[3];
 	m[0] = tx_msg;
 	return sendwait(m, 1, timeout_ms);

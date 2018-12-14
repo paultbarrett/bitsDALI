@@ -21,8 +21,7 @@
 
 uint8_t dev_found;
 
-void Dali::remap(readdr_type remap_type)
-{
+void Dali::remap(readdr_type remap_type) {
 	uint8_t n_dev;
 	this->dali_status |= 0x01;		/* Remapping */
 
@@ -65,38 +64,42 @@ void Dali::list_dev(void)
 	 */
 }
 
-uint8_t Dali::sendDirect(uint8_t val, addr_type type_addr, uint8_t addr)
-{
+uint8_t Dali::sendDirect(uint8_t val, addr_type type_addr, uint8_t addr) {
 	uint8_t cmd[2];
 
-	if (type_addr == BROADCAST)
+	if (type_addr == BROADCAST) {
 		cmd[0] = 0xFE;
+	}
 	else if (type_addr == GROUP) {
-		if (addr > 15)
+		if (addr > 15) {
 			return -1;
+		}
 		cmd[0] = 0x80 | (addr << 1);
 	} else if (type_addr == SINGLE) {
-		if (addr > 63)
+		if (addr > 63) {
 			return -1;
+		}
 		cmd[0] = (addr << 1);
 	}
 	cmd[1] = val;
 	this->sendwait(cmd, 2, 100);
 }
 
-uint8_t Dali::sendCommand(uint8_t val, addr_type type_addr, uint8_t addr)
-{
+uint8_t Dali::sendCommand(uint8_t val, addr_type type_addr, uint8_t addr) {
 	uint8_t cmd[2];
 
-	if (type_addr == BROADCAST)
+	if (type_addr == BROADCAST) {
 		cmd[0] = 0xFF;
+	}
 	else if (type_addr == GROUP) {
-		if (addr > 15)
+		if (addr > 15) {
 			return -1;
+		}
 		cmd[0] = 0x01 | (addr << 1);
 	} else if (type_addr == SINGLE) {
-		if (addr > 63)
+		if (addr > 63) {
 			return -1;
+		}
 		cmd[0] = 0x01 | (addr << 1);
 	}
 	cmd[1] = val;
@@ -104,16 +107,17 @@ uint8_t Dali::sendCommand(uint8_t val, addr_type type_addr, uint8_t addr)
 		sendExtCommand(272, 6);		/* En Dev Type Cmd Response */
 	}
 	this->sendwait(cmd, 2, 100);
-	if (val >= 32 && val <= 128 || val >= 224 && val <= 255)
+	if (val >= 32 && val <= 128 || val >= 224 && val <= 255) {
 		this->sendwait(cmd, 2, 100);
+	}
 }
 
-uint8_t Dali::sendExtCommand(uint16_t com, uint8_t val)
-{
+uint8_t Dali::sendExtCommand(uint16_t com, uint8_t val) {
 	uint8_t cmd[2];
 	uint16_t appo;
-	if (com < 256 || com > 349)
+	if (com < 256 || com > 349) {
 		return -1;
+	}
 	if (com > 255 && com < 272) {
 		appo = ((com - 256) & 0x00FF) << 1;
 		cmd[0] = appo;
@@ -125,17 +129,16 @@ uint8_t Dali::sendExtCommand(uint16_t com, uint8_t val)
 	}
 	cmd[1] = val;
 	this->sendwait(cmd, 2, 100);
-	if (com >= 258 && com <= 259)
+	if (com >= 258 && com <= 259) {
 		this->sendwait(cmd, 2, 100);
+	}
 }
 
-uint8_t *Dali::getReply(void)
-{
+uint8_t *Dali::getReply(void) {
 	return (uint8_t *) this->rx_msg;
 }
 
-uint8_t Dali::setDevAddresses(uint8_t start_addr, readdr_type all)
-{
+uint8_t Dali::setDevAddresses(uint8_t start_addr, readdr_type all) {
 	uint32_t addr_dev = 0xFF;
 	// Reset all device
 	this->sendCommand(32, BROADCAST, 0);	/* RESET */
@@ -147,10 +150,12 @@ uint8_t Dali::setDevAddresses(uint8_t start_addr, readdr_type all)
 	while (1) {
 		/* Find the device */
 		addr_dev = this->findDev(0xFFFFFF, 0x800000, 0);
-		if (addr_dev == 0xFFFFFFEE)
+		if (addr_dev == 0xFFFFFFEE) {
 			return 0xFF;		/* Abort remapping */
-		else if (addr_dev == 0xFFFFFFFF)
+		}
+		else if (addr_dev == 0xFFFFFFFF) {
 			break;
+		}
 
 		/* Program the short address */
 		/* Set the right SEARCHADDR for the found dev */
@@ -183,15 +188,18 @@ uint32_t Dali::findDev(uint32_t base_addr, uint32_t delta_addr, uint8_t n) {
 		} else
 			base_addr -= delta_addr;
 	} else {
-		if (n == 0)
+		if (n == 0) {
 			return 0xFFFFFFFF;
+		}
 		else if (n > 23) {
 			return base_addr + 1;
-		} else
+		} else {
 			base_addr += delta_addr;
+		}
 	}
-	if (n != 23)
+	if (n != 23) {
 		delta_addr >>= 1;
+	}
 	n++;
 
 	base_addr = findDev(base_addr, delta_addr, n);
