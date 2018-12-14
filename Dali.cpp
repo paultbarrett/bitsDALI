@@ -72,8 +72,7 @@ void Dali::ISR_timer()
 		this->tx_state = BIT;
 		break;
 	case BIT:
-		if (this->
-		    tx_msg[this->tx_pos >> 3] & 1 << (7 - (this->tx_pos & 0x7))) {
+		if (this->tx_msg[this->tx_pos >> 3] & 1 << (7 - (this->tx_pos & 0x7))) {
 			DALI_BUS_LOW();
 		} else {
 			DALI_BUS_HIGH();
@@ -81,13 +80,12 @@ void Dali::ISR_timer()
 		this->tx_state = BIT_X;
 		break;
 	case BIT_X:
-		if (this->
-		    tx_msg[this->tx_pos >> 3] & 1 << (7 - (this->tx_pos & 0x7))) {
+		if (this->tx_msg[this->tx_pos >> 3] & 1 << (7 - (this->tx_pos & 0x7))) {
 			DALI_BUS_HIGH();
 		} else {
 			DALI_BUS_LOW();
 		}
-		this->tx_state = BIT_X;
+		//this->tx_state = BIT_X;
 		this->tx_pos++;
 		if (this->tx_pos < this->tx_len) {
 			this->tx_state = BIT;
@@ -143,18 +141,27 @@ static Dali *IsrPCINT2Hook;
 
 ISR(PCINT0_vect) {
 	if (IsrPCINT0Hook != NULL) {
+		#ifdef DEBUG
+			Serial.Println("ISR PCINT0 Selected");
+		#endif
 		IsrPCINT0Hook->ISR_pinchange();
 	}
 }
 
 ISR(PCINT1_vect) {
 	if (IsrPCINT1Hook != NULL) {
+		#ifdef DEBUG
+			Serial.Println("ISR PCINT1 Selected");
+		#endif
 		IsrPCINT1Hook->ISR_pinchange();
 	}
 }
 
 ISR(PCINT2_vect) {
 	if (IsrPCINT2Hook != NULL) {
+		#ifdef DEBUG
+			Serial.Println("ISR PCINT2 Selected");
+		#endif
 		IsrPCINT2Hook->ISR_pinchange();
 	}
 }
@@ -166,6 +173,9 @@ void Dali::ISR_pinchange() {
 
 	/* This instance is transmitting? */
 	if (this->tx_state != IDLE) {
+		#ifdef DEBUG
+			Serial.Println("Collision Occurred");
+		#endif
 		/* Collision occurred */
 		if (bus_low && !this->tx_bus_low) {
 			this->tx_state = IDLE;	/* Stop transmission */
@@ -191,16 +201,25 @@ void Dali::ISR_pinchange() {
 		break;
 	case RX_START:
 		if (bus_low || !DALI_IS_TE(dt)) {
+			#ifdef DEBUG
+				Serial.Println("Bus Low - Data not detected");
+			#endif
 			this->rx_state = RX_IDLE;
 		} else {
 			this->rx_len = -1;
 			for (uint8_t i = 0; i < 7; i++) {
 				this->rx_msg[0] = 0;
 			}
+			#ifdef DEBUG
+				Serial.Println("Bus Low - Data detected");
+			#endif
 			this->rx_state = RX_BIT;
 		}
 		break;
 	case RX_BIT:
+		#ifdef DEBUG
+			Serial.Println("Bus Low - BIT received");
+		#endif
 		if (DALI_IS_TE(dt)) {
 			/* Add half-bit */
 			this->push_halfbit(bus_low);
@@ -254,7 +273,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 		TCNT1 = 0;
 
 		/* compare match register 16MHz/256/2Hz */
-		OCR1A = (F_CPU + DALI_BAUD) / (2 * DALI_BAUD);
+		OCR1A = (F_CPU + (DALI_BAUD)) / (2 * DALI_BAUD);
 		TCCR1B |= (1 << WGM12);			/* CTC mode */
 		TCCR1B |= (1 << CS10);			/* 1:1 prescaler */
 		TIMSK1 |= (1 << OCIE1A);		/* Interrupt enabled */
@@ -266,6 +285,9 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 				break;
 			}
 		}
+		#ifdef DEBUG
+			Serial.Println("DALI Init TX");
+		#endif
 	}
 	// /* setup rx */
 	// if (this->rx_pin >= 0) {
@@ -316,6 +338,9 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 		PCMSK1 |= (1<< (this->rx_pin-14));
 		IsrPCINT1Hook = this; //setup pinchange interrupt hook
 		}
+		#ifdef DEBUG
+			Serial.Println("DALI Init RX");
+		#endif
   	}
 
 	uint8_t i;
@@ -341,6 +366,9 @@ uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes) {
 	this->tx_len = tx_len_bytes << 3;
 	this->tx_collision = 0;
 	this->tx_state = START;
+	#ifdef DEBUG
+			Serial.Println("DALI Send Msg");
+		#endif
 	return 1;
 }
 
@@ -372,6 +400,9 @@ uint8_t Dali::sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_
 			return -1;
 		}
 	}
+	#ifdef DEBUG
+			Serial.Println("DALI Send Wait");
+		#endif
 	return 1;
 }
 

@@ -33,28 +33,9 @@
  * Enums
  */
 
-enum addr_type {
-	BROADCAST,
-	GROUP,
-	SINGLE
-};
-enum readdr_type {
-	ALL = 0,
-	MISS_SHORT = 255
-};
-enum dev_type {
-	FLUO_LAMP,
-	EMERGENCY_LIGHT,
-	DISCHARGE_LAMP,
-	LV_ALOGEN_LAMP,
-	INCANDESCENT_LAMP,
-	CONV_DIG_DC,
-	LED_MODULE,
-	SWITCH,
-	COLOUR_CTRL,
-	SEQUENCER,
-	OPTICAL_CTRL
-};
+enum addr_type {BROADCAST, GROUP, SINGLE};
+enum readdr_type {ALL = 0, MISS_SHORT = 255};
+enum dev_type {FLUO_LAMP, EMERGENCY_LIGHT, DISCHARGE_LAMP, LV_ALOGEN_LAMP, INCANDESCENT_LAMP, CONV_DIG_DC, LED_MODULE, SWITCH, COLOUR_CTRL, SEQUENCER, OPTICAL_CTRL};
 
 /*
  * Class
@@ -62,12 +43,12 @@ enum dev_type {
 
 class Dali {
 public:
-	typedef void (*EventHandlerReceivedDataFuncPtr) (Dali * sender, uint8_t * data, uint8_t len);
+	typedef void (*EventHandlerReceivedDataFuncPtr) (Dali *sender, uint8_t *data, uint8_t len);
 	EventHandlerReceivedDataFuncPtr EventHandlerReceivedData;
 
 	void begin(uint8_t tx_pin, uint8_t rx_pin);
-	uint8_t send(uint8_t * tx_msg, uint8_t tx_len_bytes);
-	uint8_t sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_ms = 500);
+	uint8_t send(uint8_t* tx_msg, uint8_t tx_len_bytes);
+	uint8_t sendwait(uint8_t* tx_msg, uint8_t tx_len_bytes, uint32_t timeout_ms = 500);
 	uint8_t sendwait_int(uint16_t tx_msg, uint32_t timeout_ms = 500);
 	uint8_t sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms = 500);
 	void ISR_timer();
