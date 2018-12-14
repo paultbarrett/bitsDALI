@@ -118,13 +118,14 @@ void Dali::ISR_timer()
 		this->rx_state = RX_IDLE;
 		/* 2 stop bits received, rx message to the user */
 		uint8_t bitlen = (this->rx_len + 1) >> 1;
-		if ((bitlen & 0x7) == 0) {
+		//if (debugMode <= 3 && debugMode != 0) Serial.println("Callback");
+		//if ((bitlen & 0x7) == 0) {
 			uint8_t len = bitlen >> 3;
 			this->rx_int_rq = 0;
 			if (this->EventHandlerReceivedData != NULL){
 				this->EventHandlerReceivedData(this, (uint8_t *)this->rx_msg, len);
 			}
-		}
+		//}
 	}
 }
 
@@ -141,27 +142,21 @@ static Dali *IsrPCINT2Hook;
 
 ISR(PCINT0_vect) {
 	if (IsrPCINT0Hook != NULL) {
-		#ifdef DEBUG
-			Serial.Println("ISR PCINT0 Selected");
-		#endif
+			 if (debugMode == 1) Serial.println("Debug - ISR PCINT0 Selected");
 		IsrPCINT0Hook->ISR_pinchange();
 	}
 }
 
 ISR(PCINT1_vect) {
 	if (IsrPCINT1Hook != NULL) {
-		#ifdef DEBUG
-			Serial.Println("ISR PCINT1 Selected");
-		#endif
+		if (debugMode == 1) Serial.println("Debug - ISR PCINT1 Selected");	
 		IsrPCINT1Hook->ISR_pinchange();
 	}
 }
 
 ISR(PCINT2_vect) {
 	if (IsrPCINT2Hook != NULL) {
-		#ifdef DEBUG
-			Serial.Println("ISR PCINT2 Selected");
-		#endif
+		if (debugMode == 1) Serial.println("Debug - ISR PCINT2 Selected");
 		IsrPCINT2Hook->ISR_pinchange();
 	}
 }
@@ -173,9 +168,7 @@ void Dali::ISR_pinchange() {
 
 	/* This instance is transmitting? */
 	if (this->tx_state != IDLE) {
-		#ifdef DEBUG
-			Serial.Println("Collision Occurred");
-		#endif
+		if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - Collision");
 		/* Collision occurred */
 		if (bus_low && !this->tx_bus_low) {
 			this->tx_state = IDLE;	/* Stop transmission */
@@ -185,6 +178,7 @@ void Dali::ISR_pinchange() {
 	}
 	/* Logical bus level unchanged */
 	if (bus_low == this->rx_last_bus_low){
+		if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - ISR Triggered Bus Low");
 		return;
 	}
 
@@ -201,25 +195,23 @@ void Dali::ISR_pinchange() {
 		break;
 	case RX_START:
 		if (bus_low || !DALI_IS_TE(dt)) {
-			#ifdef DEBUG
-				Serial.Println("Bus Low - Data not detected");
-			#endif
+			if (debugMode <= 3 && debugMode != 0) {
+				Serial.print("Timing Error - Bus Active - Start Bit - Actual Timing = ");
+				Serial.print(dt);
+				Serial.println("us");
+			}
 			this->rx_state = RX_IDLE;
 		} else {
 			this->rx_len = -1;
 			for (uint8_t i = 0; i < 7; i++) {
 				this->rx_msg[0] = 0;
 			}
-			#ifdef DEBUG
-				Serial.Println("Bus Low - Data detected");
-			#endif
+			if (debugMode == 1) Serial.println("Debug - Bus Active - Data Detected");
 			this->rx_state = RX_BIT;
 		}
 		break;
 	case RX_BIT:
-		#ifdef DEBUG
-			Serial.Println("Bus Low - BIT received");
-		#endif
+			if (debugMode == 1) Serial.println("Debug - Bus Active - Data Received");
 		if (DALI_IS_TE(dt)) {
 			/* Add half-bit */
 			this->push_halfbit(bus_low);
@@ -229,6 +221,11 @@ void Dali::ISR_pinchange() {
 			this->push_halfbit(bus_low);
 		} else {
 			/* some error... */
+			if (debugMode <= 3 && debugMode != 0) {
+				Serial.print("Timing Error - Bus Active - Data Bit - Actual Timing = ");
+				Serial.print(dt);
+				Serial.println("us");
+			}
 			this->rx_state = RX_IDLE;
 			/* TODO rx error handler */
 			return;
@@ -285,9 +282,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 				break;
 			}
 		}
-		#ifdef DEBUG
-			Serial.Println("DALI Init TX");
-		#endif
+		if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init TX");
 	}
 	// /* setup rx */
 	// if (this->rx_pin >= 0) {
@@ -338,9 +333,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 		PCMSK1 |= (1<< (this->rx_pin-14));
 		IsrPCINT1Hook = this; //setup pinchange interrupt hook
 		}
-		#ifdef DEBUG
-			Serial.Println("DALI Init RX");
-		#endif
+		if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init RX");
   	}
 
 	uint8_t i;
@@ -366,9 +359,7 @@ uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes) {
 	this->tx_len = tx_len_bytes << 3;
 	this->tx_collision = 0;
 	this->tx_state = START;
-	#ifdef DEBUG
-			Serial.Println("DALI Send Msg");
-		#endif
+	if (debugMode == 1) Serial.println("DALI Send Msg");
 	return 1;
 }
 
@@ -400,9 +391,7 @@ uint8_t Dali::sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_
 			return -1;
 		}
 	}
-	#ifdef DEBUG
-			Serial.Println("DALI Send Wait");
-		#endif
+	if (debugMode == 1) Serial.println("DALI Send Wait");
 	return 1;
 }
 

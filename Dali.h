@@ -21,13 +21,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Arduino.h"
-
-/*
- * Define
- */
-
-#define DALI_HOOK_COUNT 3
+#include <Arduino.h>
 
 /*
  * Enums
@@ -43,6 +37,7 @@ enum dev_type {FLUO_LAMP, EMERGENCY_LIGHT, DISCHARGE_LAMP, LV_ALOGEN_LAMP, INCAN
 
 class Dali {
 public:
+
 	typedef void (*EventHandlerReceivedDataFuncPtr) (Dali *sender, uint8_t *data, uint8_t len);
 	EventHandlerReceivedDataFuncPtr EventHandlerReceivedData;
 
@@ -53,6 +48,8 @@ public:
 	uint8_t sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms = 500);
 	void ISR_timer();
 	void ISR_pinchange();
+
+	#define DALI_HOOK_COUNT 3
 
 	uint8_t sendDirect(uint8_t val, addr_type type_addr, uint8_t addr);
 	uint8_t sendCommand(uint8_t val, addr_type type_addr, uint8_t addr);
@@ -74,7 +71,7 @@ public:
 private:
 	 uint8_t bus_number;
 
-	enum tx_stateEnum {IDLE,START, START_X, BIT, BIT_X, STOP1, STOP1_X, STOP2, STOP2_X, STOP3};
+	enum tx_stateEnum {IDLE, START, START_X, BIT, BIT_X, STOP1, STOP1_X, STOP2, STOP2_X, STOP3};
 	uint8_t tx_pin;
 	uint8_t tx_msg[3];
 	uint8_t tx_len;
@@ -111,3 +108,4 @@ extern Dali *Master[2];
 extern uint8_t bytes_rx;
 extern void storeSlaves(Dali * dali, uint8_t * slaves);
 extern uint8_t dev_found;
+extern int debugMode;
