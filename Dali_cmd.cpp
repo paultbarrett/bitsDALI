@@ -29,8 +29,9 @@ void Dali::remap(readdr_type remap_type)
 	/* Set the Short Address to all devices from 0x00 */
 	n_dev = this->setDevAddresses(0x00, remap_type);
 	
-	for (int i = 0; i < 8; i++)		/* Clean 'slaves' array */
+	for (int i = 0; i < 8; i++) {		/* Clean 'slaves' array */
 		this->slaves[i] = 0;
+	}
 
 	if (n_dev == 0xFF) {
 		/* Need a remap operation */
@@ -41,8 +42,10 @@ void Dali::remap(readdr_type remap_type)
 	}
 
 	/* Prepare 'slaves' array for future detects */
-	for (int i = 0; i < dev_found; i++)
+	for (int i = 0; i < dev_found; i++) {
 		this->slaves[i / 8] |= 1 << (i % 8);
+	}
+
 	storeSlaves(this, slaves);
 
 	this->dali_status &= 0xFE;		/* Finish remapping */
@@ -163,10 +166,11 @@ uint8_t Dali::setDevAddresses(uint8_t start_addr, readdr_type all)
 	return start_addr;
 }
 
-uint32_t Dali::findDev(uint32_t base_addr, uint32_t delta_addr, uint8_t n)
-{
-	if (this->dali_cmd & 0x01)
+uint32_t Dali::findDev(uint32_t base_addr, uint32_t delta_addr, uint8_t n) {
+	if (this->dali_cmd & 0x01){
 		return 0xFFFFFFEE;
+	}
+	
 	this->setSearch(base_addr);
 	
 	/* Control commands on hold during the remap (Abort or finish?) */
@@ -194,8 +198,7 @@ uint32_t Dali::findDev(uint32_t base_addr, uint32_t delta_addr, uint8_t n)
 	return base_addr;
 }
 
-void Dali::setSearch(uint32_t addr)
-{
+void Dali::setSearch(uint32_t addr) {
 	/* Control commands on hold during the remap (Abort or finish?) */
 	serialDali();
 	

@@ -73,8 +73,7 @@ void Dali::ISR_timer()
 		break;
 	case BIT:
 		if (this->
-		    tx_msg[this->tx_pos >> 3] & 1 << (7 -
-						      (this->tx_pos & 0x7))) {
+		    tx_msg[this->tx_pos >> 3] & 1 << (7 - (this->tx_pos & 0x7))) {
 			DALI_BUS_LOW();
 		} else {
 			DALI_BUS_HIGH();
@@ -83,8 +82,7 @@ void Dali::ISR_timer()
 		break;
 	case BIT_X:
 		if (this->
-		    tx_msg[this->tx_pos >> 3] & 1 << (7 -
-						      (this->tx_pos & 0x7))) {
+		    tx_msg[this->tx_pos >> 3] & 1 << (7 - (this->tx_pos & 0x7))) {
 			DALI_BUS_HIGH();
 		} else {
 			DALI_BUS_LOW();
@@ -241,8 +239,8 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin)
 	this->tx_state = IDLE;
 	this->rx_state = RX_IDLE;
 
-	if (!Serial)
-		Serial.begin(115200);
+	//if (!Serial)
+	//	Serial.begin(115200);
 
 	/* setup tx */
 	if (this->tx_pin >= 0) {
@@ -269,32 +267,56 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin)
 			}
 		}
 	}
-	/* setup rx */
-	if (this->rx_pin >= 0) {
-		/* setup rx pin */
-		pinMode(this->rx_pin, INPUT);
+	// /* setup rx */
+	// if (this->rx_pin >= 0) {
+	// 	/* setup rx pin */
+	// 	pinMode(this->rx_pin, INPUT);
 
-		/* setup rx pinchange interrupt */
-		/* 10-13  PCINT0_vect PCINT4-7 */
-		/* 14-15  PCINT1_vect PCINT9-10 */
-		/* A8-A15 PCINT2_vect PCINT16-23 */
-		if (this->rx_pin <= 13 && this->rx_pin >= 10) {
-			PCICR |= (1 << PCIE0);
-			PCMSK0 |= (1 << (this->rx_pin - 6));
-			/* setup pinchange interrupt hook */
-			IsrPCINT0Hook = this;
-		} else if (this->rx_pin == 14 && this->rx_pin == 15) {
-			PCICR |= (1 << PCIE1);
-			PCMSK1 |= (1 << (this->rx_pin - 13));
-			/* setup pinchange interrupt hook */
-			IsrPCINT1Hook = this;
-		} else if (this->rx_pin <= A15 && this->rx_pin >= A8) {
-			PCICR |= (1 << PCIE2);
-			PCMSK2 |= (1 << (this->rx_pin - 62));
-			/* setup pinchange interrupt hook */
-			IsrPCINT2Hook = this;
+	// 	/* setup rx pinchange interrupt */
+	// 	/* 10-13  PCINT0_vect PCINT4-7 */
+	// 	/* 14-15  PCINT1_vect PCINT9-10 */
+	// 	/* A8-A15 PCINT2_vect PCINT16-23 */
+	// 	if (this->rx_pin <= 13 && this->rx_pin >= 10) {
+	// 		PCICR |= (1 << PCIE0);
+	// 		PCMSK0 |= (1 << (this->rx_pin - 6));
+	// 		/* setup pinchange interrupt hook */
+	// 		IsrPCINT0Hook = this;
+	// 	} else if (this->rx_pin == 14 && this->rx_pin == 15) {
+	// 		PCICR |= (1 << PCIE1);
+	// 		PCMSK1 |= (1 << (this->rx_pin - 13));
+	// 		/* setup pinchange interrupt hook */
+	// 		IsrPCINT1Hook = this;
+	// 	} else if (this->rx_pin <= A15 && this->rx_pin >= A8) {
+	// 		PCICR |= (1 << PCIE2);
+	// 		PCMSK2 |= (1 << (this->rx_pin - 62));
+	// 		/* setup pinchange interrupt hook */
+	// 		IsrPCINT2Hook = this;
+	// 	}
+	// }
+
+	  //setup rx  
+	if(this->rx_pin>=0) {
+		//setup rx pin
+		pinMode(this->rx_pin, INPUT);    
+
+		//setup rx pinchange interrupt
+		// 0- 7 PCINT2_vect PCINT16-23
+		// 8-13 PCINT0_vect PCINT0-5
+		//14-19 PCINT1_vect PCINT8-13
+		if(this->rx_pin<=7){
+		PCICR |= (1<<PCIE2);
+		PCMSK2 |= (1<< (this->rx_pin));
+		IsrPCINT2Hook = this; //setup pinchange interrupt hook
+		}else if(this->rx_pin<=13) {
+		PCICR |= (1<<PCIE0);
+		PCMSK0 |= (1<< (this->rx_pin-8));
+		IsrPCINT0Hook = this; //setup pinchange interrupt hook
+		}else if(this->rx_pin<=19) {
+		PCICR |= (1<<PCIE1);
+		PCMSK1 |= (1<< (this->rx_pin-14));
+		IsrPCINT1Hook = this; //setup pinchange interrupt hook
 		}
-	}
+  	}
 
 	uint8_t i;
 	for (i = 0; i < 2; i++) {
@@ -306,12 +328,11 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin)
 	bytes_rx = 0;
 }
 
-uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes)
-{
+uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes) {
 	if (tx_len_bytes > 3)
-		return -1;
+		return -1; // Return Error
 	if (this->tx_state != IDLE)
-		return -1;
+		return -1; // Return Error
 	for (uint8_t i = 0; i < tx_len_bytes; i++)
 		this->tx_msg[i] = tx_msg[i];
 	this->tx_len = tx_len_bytes << 3;
@@ -320,29 +341,30 @@ uint8_t Dali::send(uint8_t * tx_msg, uint8_t tx_len_bytes)
 	return 1;
 }
 
-uint8_t Dali::sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes,
-		       uint32_t timeout_ms)
-{
+uint8_t Dali::sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_ms) {
 	if (tx_len_bytes > 3)
 		return -1;
 	uint32_t ts = millis();
 	/* wait for idle */
-	while (this->tx_state != IDLE)
+	while (this->tx_state != IDLE) {
 		if (millis() - ts > timeout_ms)
 			return -1;
+	}
 	/* start transmit */
 	if (this->send(tx_msg, tx_len_bytes) < 0)
 		return -1;
 	this->rx_int_rq = 1;
 	/* waiting for complete transmission */
-	while (this->tx_state != IDLE)
+	while (this->tx_state != IDLE){
 		if (millis() - ts > timeout_ms)	/* timeout? */
 			return -1;
-	while (this->rx_int_rq)
+	}
+	while (this->rx_int_rq){
 		if (millis() - ts > timeout_ms) {	/* timeout? */
 			this->rx_msg[0] = 0x00;
 			return -1;
 		}
+	}
 	return 1;
 }
 

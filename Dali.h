@@ -27,7 +27,7 @@
  * Define
  */
 
-#define DALI_HOOK_COUNT 2
+#define DALI_HOOK_COUNT 3
 
 /*
  * Enums
@@ -62,15 +62,12 @@ enum dev_type {
 
 class Dali {
 public:
-	typedef void (*EventHandlerReceivedDataFuncPtr) (Dali * sender,
-							 uint8_t * data,
-							 uint8_t len);
+	typedef void (*EventHandlerReceivedDataFuncPtr) (Dali * sender, uint8_t * data, uint8_t len);
 	EventHandlerReceivedDataFuncPtr EventHandlerReceivedData;
 
 	void begin(uint8_t tx_pin, uint8_t rx_pin);
 	uint8_t send(uint8_t * tx_msg, uint8_t tx_len_bytes);
-	uint8_t sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes,
-			 uint32_t timeout_ms = 500);
+	uint8_t sendwait(uint8_t * tx_msg, uint8_t tx_len_bytes, uint32_t timeout_ms = 500);
 	uint8_t sendwait_int(uint16_t tx_msg, uint32_t timeout_ms = 500);
 	uint8_t sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms = 500);
 	void ISR_timer();
@@ -96,14 +93,7 @@ public:
 private:
 	 uint8_t bus_number;
 
-	enum tx_stateEnum {
-		IDLE,
-		START, START_X,
-		BIT,   BIT_X,
-		STOP1, STOP1_X,
-		STOP2, STOP2_X,
-		STOP3
-	};
+	enum tx_stateEnum {IDLE,START, START_X, BIT, BIT_X, STOP1, STOP1_X, STOP2, STOP2_X, STOP3};
 	uint8_t tx_pin;
 	uint8_t tx_msg[3];
 	uint8_t tx_len;
@@ -112,11 +102,7 @@ private:
 	volatile uint8_t tx_bus_low;	/* Current logic state of the bus */
 	volatile uint8_t tx_collision;
 
-	enum rx_stateEnum {
-		RX_IDLE,
-		RX_START,
-		RX_BIT
-	};
+	enum rx_stateEnum {RX_IDLE,	RX_START, RX_BIT};
 	uint8_t rx_pin;
 	volatile uint8_t rx_last_bus_low;    /* Last logic state of the bus */
 	volatile uint32_t rx_last_change_ts; /* Last change timestamp */
