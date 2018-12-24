@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <Arduino.h>
+#include <avr/wdt.h>
 
 /*
  * Enums
@@ -48,6 +49,7 @@ public:
 	uint8_t sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms = 500);
 	void ISR_timer();
 	void ISR_pinchange();
+	void rebootonError();
 
 	#define DALI_HOOK_COUNT 3
 
@@ -108,4 +110,5 @@ extern Dali *Master[2];
 extern uint8_t bytes_rx;
 extern void storeSlaves(Dali * dali, uint8_t * slaves);
 extern uint8_t dev_found;
-extern int debugMode;
+extern int debugMode; // Used to toggle debug serial output. Defined in main sketch
+extern int timingError;

@@ -24,8 +24,8 @@
  * Define
  */
  
-#define DALI_BUS_LOW() digitalWrite(this->tx_pin,LOW); this->tx_bus_low=1
-#define DALI_BUS_HIGH() digitalWrite(this->tx_pin,HIGH); this->tx_bus_low=0
+#define DALI_BUS_LOW() digitalWrite(this->tx_pin,HIGH); this->tx_bus_low=1
+#define DALI_BUS_HIGH() digitalWrite(this->tx_pin,LOW); this->tx_bus_low=0
 #define DALI_IS_BUS_LOW() (digitalRead(this->rx_pin)==LOW)
 #define DALI_BAUD 1200
 #define DALI_TE ((1000000+(DALI_BAUD))/(2*(DALI_BAUD)))	/* 417us */
@@ -168,11 +168,11 @@ void Dali::ISR_pinchange() {
 
 	/* This instance is transmitting? */
 	if (this->tx_state != IDLE) {
-		if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - Collision");
 		/* Collision occurred */
 		if (bus_low && !this->tx_bus_low) {
-			this->tx_state = IDLE;	/* Stop transmission */
-			this->tx_collision = 1;	/* Check collision */
+			//if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - Collision");
+			//this->tx_state = IDLE;	/* Stop transmission */
+			//this->tx_collision = 1;	/* Check collision */
 		}
 		return;
 	}
@@ -195,6 +195,7 @@ void Dali::ISR_pinchange() {
 		break;
 	case RX_START:
 		if (bus_low || !DALI_IS_TE(dt)) {
+			timingError ++; // Increment timing error
 			if (debugMode <= 3 && debugMode != 0) {
 				Serial.print("Timing Error - Bus Active - Start Bit - Actual Timing = ");
 				Serial.print(dt);
@@ -202,6 +203,7 @@ void Dali::ISR_pinchange() {
 			}
 			this->rx_state = RX_IDLE;
 		} else {
+			timingError = 0; // Reset timing error counter
 			this->rx_len = -1;
 			for (uint8_t i = 0; i < 7; i++) {
 				this->rx_msg[0] = 0;
@@ -406,4 +408,12 @@ uint8_t Dali::sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms) {
 	uint8_t m[3];
 	m[0] = tx_msg;
 	return sendwait(m, 1, timeout_ms);
+}
+
+void Dali::rebootonError() {
+	if (timingError >= 3){
+		Serial.println("Timing Error On Bus - Restarting");
+		wdt_enable(WDTO_60MS);
+		while(1){}
+	}
 }
