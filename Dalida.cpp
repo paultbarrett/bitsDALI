@@ -93,22 +93,22 @@ void serialDali_rx(uint8_t errn, uint8_t * data, uint8_t n) {
 	} else {
 		switch (errn) {
 		case 0x01:
-			Serial.println("E01");
+			Serial.println("E01 - Invalid Command");
 			break;
 		case 0x02:
-			Serial.println("E02");
+			Serial.println("E02 - Command Not Implemented");
 			break;
 		case 0x03:
-			Serial.println("E03");
+			Serial.println("E03 - DALI BUS Busy");
 			break;
 		case 0x20:
-			Serial.println("E20");
+			Serial.println("E20 - Invalid BUS ID");
 			break;
 		case 0x30:
-			Serial.println("E30");
+			Serial.println("E30 - Invalid DEV Address");
 			break;
 		case 0x90:
-			Serial.println("E90");
+			Serial.println("E90 - Timeout");
 			break;
 		}
 	}

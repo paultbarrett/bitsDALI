@@ -26,7 +26,7 @@
  
 #define DALI_BUS_LOW() digitalWrite(this->tx_pin,HIGH); this->tx_bus_low=1
 #define DALI_BUS_HIGH() digitalWrite(this->tx_pin,LOW); this->tx_bus_low=0
-#define DALI_IS_BUS_LOW() (digitalRead(this->rx_pin)==LOW)
+#define DALI_IS_BUS_LOW() (digitalRead(this->rx_pin)==HIGH)
 #define DALI_BAUD 1200
 #define DALI_TE ((1000000+(DALI_BAUD))/(2*(DALI_BAUD)))	/* 417us */
 #define DALI_TE_MIN (80*DALI_TE)/100
@@ -167,20 +167,20 @@ void Dali::ISR_pinchange() {
 	uint8_t bus_low = DALI_IS_BUS_LOW();
 
 	/* This instance is transmitting? */
-	if (this->tx_state != IDLE) {
-		/* Collision occurred */
-		if (bus_low && !this->tx_bus_low) {
-			//if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - Collision");
-			//this->tx_state = IDLE;	/* Stop transmission */
-			//this->tx_collision = 1;	/* Check collision */
-		}
-		return;
-	}
+	// if (this->tx_state != IDLE) {
+	// 	/* Collision occurred */
+	// 	if (bus_low && !this->tx_bus_low) {
+	// 		if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - Collision");
+	// 		this->tx_state = IDLE;	/* Stop transmission */
+	// 		this->tx_collision = 1;	/* Check collision */
+	// 	}
+	// 	return;
+	// }
 	/* Logical bus level unchanged */
-	if (bus_low == this->rx_last_bus_low){
-		if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - ISR Triggered Bus Low");
-		return;
-	}
+	// if (bus_low == this->rx_last_bus_low){
+	// 	if (debugMode <= 3 && debugMode != 0) Serial.println("Bus Error - ISR Triggered Bus Low");
+	// 	return;
+	// }
 
 	/* Logical bus level changed -> store values for analyze the content */
 	uint32_t dt = ts - this->rx_last_change_ts;	/* Period of transmission protocol */
