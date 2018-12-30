@@ -1,5 +1,6 @@
 {
-    "board": "arduino:avr:uno",
-    "port": "COM5",
-    "sketch": "..\\..\\..\\..\\..\\..\\GIT\\dali-controller\\dali-controller.ino"
+    "board": "arduino:avr:mega",
+    "port": "COM6",
+    "sketch": "..\\..\\..\\..\\..\\..\\GIT\\dali-controller\\dali-controller.ino",
+    "configuration": "cpu=atmega2560"
 }
