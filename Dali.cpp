@@ -412,11 +412,3 @@ uint8_t Dali::sendwait_byte(uint8_t tx_msg, uint32_t timeout_ms) {
 	m[0] = tx_msg;
 	return sendwait(m, 1, timeout_ms);
 }
-
-void Dali::rebootonError() {
-	if (timingError >= 3){
-		Serial.println("Timing Error On Bus - Restarting");
-		wdt_enable(WDTO_60MS);
-		while(1){}
-	}
-}
