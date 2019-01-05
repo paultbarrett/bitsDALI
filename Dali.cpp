@@ -195,7 +195,6 @@ void Dali::ISR_pinchange() {
 		break;
 	case RX_START:
 		if (bus_low || !DALI_IS_TE(dt)) {
-			timingError ++; // Increment timing error
 			if (debugMode <= 3 && debugMode != 0) {
 				Serial.print("Timing Error - Bus Active - Start Bit - Actual Timing = ");
 				Serial.print(dt);
@@ -203,7 +202,6 @@ void Dali::ISR_pinchange() {
 			}
 			this->rx_state = RX_IDLE;
 		} else {
-			timingError = 0; // Reset timing error counter
 			this->rx_len = -1;
 			for (uint8_t i = 0; i < 7; i++) {
 				this->rx_msg[0] = 0;
@@ -284,7 +282,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 				break;
 			}
 		}
-		if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init TX");
+		Serial.println(" * TX OK");
 	}
 
 	//setup rx - Arduino Mega
@@ -313,7 +311,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 			PCMSK2 |= (1 << (this->rx_pin - 62));
 			IsrPCINT2Hook = this; //setup pinchange interrupt hook
 		}
-		if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init RX");
+		Serial.println(" * RX OK");
 	}
 
 	// //setup rx - Arduino Uno 
