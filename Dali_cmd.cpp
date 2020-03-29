@@ -86,21 +86,12 @@ void Dali::remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type) {
 	Serial.println(longaddress[1], HEX);
 	Serial.println(longaddress[2], HEX);
 
-	this->sendExtCommand(264, (uint8_t)longaddress[0] & 0xFF);
-	this->sendExtCommand(265, (uint8_t)longaddress[1] & 0xFF);
-	this->sendExtCommand(266, (uint8_t)longaddress[2] & 0xFF);
-	
-	//addr_dev = (longaddress[2] << 16) & 0xFF | (longaddress[1] << 8) & 0xFF | longaddress[0] & 0xFF  ;
-
-	//addr_dev = ((uint32_t)longaddress[0]<<16) + ((uint32_t)longaddress[1]<<8) + ((uint32_t)longaddress[2]);
-
-	//Serial.println(addr_dev,HEX);
-
-	//this->setSearch(addr_dev & 0xFFFFFFFF);
-	//delay(400);
+	this->sendExtCommand(264, longaddress[0] & 0xFF);
+	this->sendExtCommand(265, longaddress[1] & 0xFF);
+	this->sendExtCommand(266, longaddress[2] & 0xFF);
 
 	// Program new short address
-	this->sendExtCommand(267, 0x06);
+	this->sendExtCommand(267, (newAddr << 1) | 0x01);
 	delay(400);
 
 	this->sendExtCommand(256, 0x00);	/* TERMINATE */
