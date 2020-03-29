@@ -45,7 +45,66 @@ void Dali::remap(readdr_type remap_type) {
 		this->slaves[i / 8] |= 1 << (i % 8);
 	}
 
-	storeSlaves(this, slaves);
+	storeSlaves(slaves);
+
+	this->dali_status &= 0xFE;		/* Finish remapping */
+}
+
+void Dali::remapStatic(uint8_t addr, readdr_type remap_type) {
+	uint8_t n_dev;
+	this->dali_status |= 0x01;		/* Remapping */
+
+	/* Set the Short Address to all devices starting from specific address */
+	n_dev = this->setDevAddresses(addr, remap_type);
+
+	this->dali_status &= 0xFE;		/* Finish remapping */
+}
+
+void Dali::remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type) {
+	uint32_t addr_dev = 0x00000000;
+	uint8_t longaddress[3];
+	this->dali_status |= 0x01;		/* Remapping */
+
+	// Reset all device
+	this->sendCommand(32, BROADCAST, 0);	/* RESET */
+	delay(400);
+	this->sendCommand(0, BROADCAST, 0);		/* Turn off lamps */
+
+	this->sendExtCommand(258, 0x00);		/* INITIALISE devices */
+	this->sendExtCommand(259, 0x00);		/* RANDOMISE */
+	delay(400);
+
+	// Retrieve random address from device
+	this->sendCommand(194, SINGLE, oldAddr);		/* Query Random Address High */
+	longaddress[0] = *(this->getReply());
+	this->sendCommand(195, SINGLE, oldAddr);		/* Query Random Address Medium */
+	longaddress[1] = *(this->getReply());
+	this->sendCommand(196, SINGLE, oldAddr);		/* Query Random Address Low */
+	longaddress[2] = *(this->getReply());
+
+	Serial.println(longaddress[0], HEX);
+	Serial.println(longaddress[1], HEX);
+	Serial.println(longaddress[2], HEX);
+
+	this->sendExtCommand(264, (uint8_t)longaddress[0] & 0xFF);
+	this->sendExtCommand(265, (uint8_t)longaddress[1] & 0xFF);
+	this->sendExtCommand(266, (uint8_t)longaddress[2] & 0xFF);
+	
+	//addr_dev = (longaddress[2] << 16) & 0xFF | (longaddress[1] << 8) & 0xFF | longaddress[0] & 0xFF  ;
+
+	//addr_dev = ((uint32_t)longaddress[0]<<16) + ((uint32_t)longaddress[1]<<8) + ((uint32_t)longaddress[2]);
+
+	//Serial.println(addr_dev,HEX);
+
+	//this->setSearch(addr_dev & 0xFFFFFFFF);
+	//delay(400);
+
+	// Program new short address
+	this->sendExtCommand(267, 0x06);
+	delay(400);
+
+	this->sendExtCommand(256, 0x00);	/* TERMINATE */
+	delay(400);
 
 	this->dali_status &= 0xFE;		/* Finish remapping */
 }
@@ -143,10 +202,11 @@ uint8_t Dali::setDevAddresses(uint8_t start_addr, readdr_type all) {
 	// Reset all device
 	this->sendCommand(32, BROADCAST, 0);	/* RESET */
 	delay(400);
-	this->sendCommand(0, BROADCAST, 0);	/* Turn off lamps */
+	this->sendCommand(0, BROADCAST, 0);		/* Turn off lamps */
 
-	this->sendExtCommand(258, all);		/* INITIALISE devices */
-	this->sendExtCommand(259, 0x00);	/* RANDOMISE */
+	this->sendExtCommand(258, all);			/* INITIALISE devices */
+	this->sendExtCommand(259, 0x00);		/* RANDOMISE */
+
 	while (1) {
 		/* Find the device */
 		addr_dev = this->findDev(0xFFFFFF, 0x800000, 0);

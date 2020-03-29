@@ -285,59 +285,59 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 		Serial.println(" * TX OK");
 	}
 
-	//setup rx - Arduino Mega
-	if (this->rx_pin >= 0) {
-		//setup rx pin
-		pinMode(this->rx_pin, INPUT);
-
-		// setup rx pinchange interrupt
-		// 10-13  PCINT0_vect PCINT4-7
-		// 14-15  PCINT1_vect PCINT9-10
-		// A8-A15 PCINT2_vect PCINT16-23
-		if (this->rx_pin <= 13 && this->rx_pin >= 10) {
-			PCICR |= (1 << PCIE0);
-			PCMSK0 |= (1 << (this->rx_pin - 6));
-			IsrPCINT0Hook = this; //setup pinchange interrupt hook
-		} else if (this->rx_pin == 14) {
-			PCICR |= (1 << PCIE1);
-			PCMSK1 |= (1 << (this->rx_pin - 13));
-			IsrPCINT1Hook = this; //setup pinchange interrupt hook
-		} else if (this->rx_pin == 15) {
-			PCICR |= (1 << PCIE1);
-			PCMSK1 |= (1 << (this->rx_pin - 13));
-			IsrPCINT1Hook = this; //setup pinchange interrupt hook
-		} else if (this->rx_pin <= A15 && this->rx_pin >= A8) {
-			PCICR |= (1 << PCIE2);
-			PCMSK2 |= (1 << (this->rx_pin - 62));
-			IsrPCINT2Hook = this; //setup pinchange interrupt hook
-		}
-		Serial.println(" * RX OK");
-	}
-
-	// //setup rx - Arduino Uno 
-	// if (this->rx_pin >=0) {
+	// //setup rx - Arduino Mega
+	// if (this->rx_pin >= 0) {
 	// 	//setup rx pin
-	// 	pinMode(this->rx_pin, INPUT);    
+	// 	pinMode(this->rx_pin, INPUT);
 
-	// 	//setup rx pinchange interrupt
-	// 	// 0- 7 PCINT2_vect PCINT16-23
-	// 	// 8-13 PCINT0_vect PCINT0-5
-	// 	//14-19 PCINT1_vect PCINT8-13
-	// 	if(this->rx_pin <= 7) {
-	// 		PCICR |= (1 << PCIE2);
-	// 		PCMSK2 |= (1 << (this->rx_pin));
-	// 		IsrPCINT2Hook = this; //setup pinchange interrupt hook
-	// 	} else if (this->rx_pin <= 13) {
+	// 	// setup rx pinchange interrupt
+	// 	// 10-13  PCINT0_vect PCINT4-7
+	// 	// 14-15  PCINT1_vect PCINT9-10
+	// 	// A8-A15 PCINT2_vect PCINT16-23
+	// 	if (this->rx_pin <= 13 && this->rx_pin >= 10) {
 	// 		PCICR |= (1 << PCIE0);
-	// 		PCMSK0 |= (1 << (this->rx_pin - 8));
+	// 		PCMSK0 |= (1 << (this->rx_pin - 6));
 	// 		IsrPCINT0Hook = this; //setup pinchange interrupt hook
-	// 	} else if (this->rx_pin <= 19) {
+	// 	} else if (this->rx_pin == 14) {
 	// 		PCICR |= (1 << PCIE1);
-	// 		PCMSK1 |= (1 << (this->rx_pin - 14));
+	// 		PCMSK1 |= (1 << (this->rx_pin - 13));
 	// 		IsrPCINT1Hook = this; //setup pinchange interrupt hook
+	// 	} else if (this->rx_pin == 15) {
+	// 		PCICR |= (1 << PCIE1);
+	// 		PCMSK1 |= (1 << (this->rx_pin - 13));
+	// 		IsrPCINT1Hook = this; //setup pinchange interrupt hook
+	// 	} else if (this->rx_pin <= A15 && this->rx_pin >= A8) {
+	// 		PCICR |= (1 << PCIE2);
+	// 		PCMSK2 |= (1 << (this->rx_pin - 62));
+	// 		IsrPCINT2Hook = this; //setup pinchange interrupt hook
 	// 	}
-	// 	if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init RX");
-  	// }
+	// 	Serial.println(" * RX OK");
+	// }
+
+	//setup rx - Arduino Uno 
+	if (this->rx_pin >=0) {
+		//setup rx pin
+		pinMode(this->rx_pin, INPUT);    
+
+		//setup rx pinchange interrupt
+		// 0- 7 PCINT2_vect PCINT16-23
+		// 8-13 PCINT0_vect PCINT0-5
+		//14-19 PCINT1_vect PCINT8-13
+		if(this->rx_pin <= 7) {
+			PCICR |= (1 << PCIE2);
+			PCMSK2 |= (1 << (this->rx_pin));
+			IsrPCINT2Hook = this; //setup pinchange interrupt hook
+		} else if (this->rx_pin <= 13) {
+			PCICR |= (1 << PCIE0);
+			PCMSK0 |= (1 << (this->rx_pin - 8));
+			IsrPCINT0Hook = this; //setup pinchange interrupt hook
+		} else if (this->rx_pin <= 19) {
+			PCICR |= (1 << PCIE1);
+			PCMSK1 |= (1 << (this->rx_pin - 14));
+			IsrPCINT1Hook = this; //setup pinchange interrupt hook
+		}
+		if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init RX");
+  	}
 
 	uint8_t i;
 	for (i = 0; i < 2; i++) {

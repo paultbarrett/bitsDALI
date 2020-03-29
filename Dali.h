@@ -61,6 +61,8 @@ public:
 
 	/* DALIDA functions */
 	void remap(readdr_type remap_type);
+	void remapStatic(uint8_t addr, readdr_type remap_type);
+	void remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type);
 	void abort_remap(void);
 	void list_dev(void);
 
@@ -107,6 +109,6 @@ private:
 void serialDali(void);
 extern Dali *Master[2];
 extern uint8_t bytes_rx;
-extern void storeSlaves(Dali * dali, uint8_t * slaves);
+extern void storeSlaves(uint8_t * slaves);
 extern uint8_t dev_found;
 extern int debugMode; // Used to toggle debug serial output. Defined in main sketch

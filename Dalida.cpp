@@ -27,8 +27,9 @@ uint8_t devCmd(char *msg);
 uint8_t grpCmd(char *msg);
 uint8_t busCmd(char *msg);
 uint8_t rmpCmd(char *msg);
+uint8_t tstCmd(char *msg);
 uint8_t action(char *msg);
-void storeSlaves(Dali * dali, uint8_t * slaves);
+void storeSlaves(uint8_t * slaves);
 void retrieveSlaves(Dali * dali, uint8_t * slaves);
 int checkSlave(Dali * dali, uint8_t dev);
 int infoDev(Dali * dali, uint8_t dev_type, uint8_t dev, uint8_t * info_buf);
@@ -132,6 +133,9 @@ uint8_t exeCmd(char *msg) {
 	case 'R':
 		return rmpCmd(msg);
 		break;
+	case 't':
+		return tstCmd(msg);
+		break;
 	}
 	return 0x01;	/* Syntax error */
 }
@@ -155,9 +159,9 @@ uint8_t devCmd(char *msg) {
 	str[1] = msg[4];
 	dev = (uint8_t) strtol(str, NULL, 16);
 
-	if (checkSlave(Master[bus], dev) < 0) {
-		return 0x30;
-	}
+	// if (checkSlave(Master[bus], dev) < 0) {
+	// 	return 0x30;
+	// }
 
 	switch (msg[1]) {
 	case '1':
@@ -269,35 +273,46 @@ uint8_t busCmd(char *msg) {
 }
 
 uint8_t rmpCmd(char *msg) {
+	uint8_t dev;
+	uint8_t newdev;
+	char str[] = "00";
+	char str2[] = "00";
+
+	// Device Address
+	str[0] = msg[2];
+	str[1] = msg[3];
+	dev = (uint8_t) strtol(str, NULL, 16);
+
+	// New Device Address
+	str2[0] = msg[4];
+	str2[1] = msg[5];
+	newdev = (uint8_t) strtol(str2, NULL, 16);
+
 	switch (msg[1]) {
 	case '\n':	/* Remap All */
-		if ((Master[0]->dali_status & 0x01) == 1 || (Master[1]->dali_status & 0x01) == 1) {
+		if ((Master[0]->dali_status & 0x01) == 1) {
 			return 0x03;
 		}
 		serialDali_rx(0, NULL, 0);
 		dev_found = 0;
-		for (int i = 0; i < 2; i++) {
-			if (Master[i] != NULL) {
-				Master[i]->remap(ALL);
-			}
+		if (Master[0] != NULL) {
+			Master[0]->remap(ALL);
 		}
 		return 0xFF;	/* Remap finished. Do not send anything. */
 
-	case 'u':	/* Remap unknown Dev */
-		if ((Master[0]->dali_status & 0x01) == 1 || (Master[1]->dali_status & 0x01) == 1) {
+	case 'u':	/* Remap all unknown devices */
+		if ((Master[0]->dali_status & 0x01) == 1) {
 			return 0x03;
 		}
 		serialDali_rx(0, NULL, 0);
 		dev_found = 0;
-		for (int i = 0; i < 2; i++) {
-			if (Master[i] != NULL) {
-				Master[i]->remap(MISS_SHORT);
-			}
+		if (Master[0] != NULL) {
+			Master[0]->remap(MISS_SHORT);
 		}
 		return 0xFF;	/* Remap finished. Do not send anything. */
 
-	case 'f':	/* Remap finished? */
-		if ((Master[0]->dali_status & 0x01) == 1 || (Master[1]->dali_status & 0x01) == 1) {
+	case 'f':	/* Check Remap status */
+		if ((Master[0]->dali_status & 0x01) == 1) {
 			rx_buf[1] = (dev_found * 100) / 64;
 		} else {
 			rx_buf[1] = 100;
@@ -306,11 +321,30 @@ uint8_t rmpCmd(char *msg) {
 		rx_code = STRING_CODING;
 		return 0x00;
 
+	case 's':	/* Static Remap with specific starting short address Rs{XX} */
+		if ((Master[0]->dali_status & 0x01) == 1) {
+			return 0x03;
+		}
+		serialDali_rx(0, NULL, 0);
+		dev_found = 0;
+		if (Master[0] != NULL) {
+			Master[0]->remapStatic(dev,ALL);
+		}
+		return 0xFF;	/* Remap finished. Do not send anything. */
+
+	case 'm':	/* Remap a short address to a new one */
+		if ((Master[0]->dali_status & 0x01) == 1) {
+			return 0x03;
+		}
+		serialDali_rx(0, NULL, 0);
+		if (Master[0] != NULL) {
+			Master[0]->remapMove(dev,newdev,ALL);
+		}
+		return 0xFF;	/* Remap finished. Do not send anything. */
+
 	case 'A':	/* Remap Abort */
-		for (int i = 0; i < 2; i++) {
-			if (Master[i] != NULL) {
-				Master[i]->abort_remap();
-			}
+		if (Master[0] != NULL) {
+			Master[0]->abort_remap();
 		}
 		rx_buf[0] = 0;
 		return 0x00;
@@ -319,16 +353,40 @@ uint8_t rmpCmd(char *msg) {
 	return 0x01;
 }
 
-void storeSlaves(Dali * dali, uint8_t * slaves) {
-	int base_addr;
+uint8_t tstCmd(char *msg) {
+	uint8_t bus, dev, arc;
+	char str[] = "00";
 
-	if (dali == Master[0]) {
-		base_addr = 0x0000;
-	} else if (dali == Master[1]) {
-		base_addr = 0x0100;
+	// Set BUS ID
+	if (msg[2] == '0') {
+		bus = 0;
+	} else if (msg[2] == '1') {
+		bus = 1;
 	} else {
-		return;
+		return 0x20;
 	}
+
+	// Check BUS State
+	if ((Master[bus]->dali_status & 0x01) == 1) {
+		return 0x03;
+	}
+
+	str[0] = msg[3];
+	str[1] = msg[4];
+	dev = (uint8_t) strtol(str, NULL, 16);
+
+	switch (msg[1]) {
+	case '1':
+		// E02 - Command Not Implemented
+		return 0x02;
+	}
+	 // E01 - Invalid Command
+	return 0x01;
+}
+
+void storeSlaves(uint8_t * slaves) {
+	int base_addr = 0x0000;
+
 	for (int i = 0; i < 8; i++) {
 		eeprom_write_byte((unsigned char *)(base_addr + i), slaves[i]);
 	}
