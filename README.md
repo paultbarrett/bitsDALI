@@ -38,6 +38,10 @@ This is not my own design and I cannot recall where this was found. If someone k
 
 Note that this circuit has been in use in my own house for over 1 year without any problems.
 
+Here is my shonky breadboard setup for bench testing.
+(This is not the one that has been in service for a year)
+<img src="https://github.com/paultbarrett/bitsDALI/raw/master/breadboard.jpg">
+
 A external DALI power supply is used and all drivers are OSRAM OPPTOTRONIC.
 
 Sample Program
