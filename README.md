@@ -28,9 +28,9 @@ Circuitry
 
 The circuit design for the DALI bus interface is derived from the attached schematic. Minor modifications were made based on components available to me.
 
-U1 & U2 Optocouplers  - TCLT10000 > PC817
-Q2 Transistor - MMBT2222A-TP > BC548
-D5 Bridge Rectifier - BGX 50AE6327 > 2W10
+* U1 & U2 Optocouplers  - TCLT10000 > PC817
+* Q2 Transistor - MMBT2222A-TP > BC548
+* D5 Bridge Rectifier - BGX 50AE6327 > 2W10
 
 This is not my own design and I cannot recall where this was found. If someone knows where this is from or are the creators I will happily update this to provide credits.
 
@@ -96,4 +96,5 @@ Additional Documentation
 
 
 [commands.txt](https://github.com/paultbarrett/bitsDALI/blob/master/dali.txt) - The serial commands to interact with the interface
+
 [dali.txt](https://github.com/paultbarrett/bitsDALI/blob/master/dali.txt) - DALI command specs
