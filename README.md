@@ -1,7 +1,7 @@
 Arduino DALI library for ATmega328P devices
 ===========================================
 
-DALI master library derived from the Cosino DALI2560  library - https://github.com/cosino/dali2560
+DALI master library derived from the [Cosino DALI2560  library](https://github.com/cosino/dali2560)
 
 Supported Boards
 ----------------
@@ -26,8 +26,15 @@ If looking to incorporate this in a Wifi based project then an Arduino Nano coul
 Circuitry
 ---------
 
-The circuit design for the DALI bus interface is derived from the attached schematic.
-I cannot recall where this was found but it is not my own design. If someone knows where this is from or are the creaters themselves I will happily update this to provide credits.
+The circuit design for the DALI bus interface is derived from the attached schematic. Minor modifications were made based on components available to me.
+
+* U1 & U2 Optocouplers  - TCLT10000 > PC817
+* Q2 Transistor - MMBT2222A-TP > BC548
+* D5 Bridge Rectifier - BGX 50AE6327 > 2W10
+
+This is not my own design and I cannot recall where this was found. If someone knows where this is from or are the creators I will happily update this to provide credits.
+
+<img src="https://github.com/paultbarrett/bitsDALI/raw/master/schematic.jpg">
 
 Note that this circuit has been in use in my own house for over 1 year without any problems.
 
@@ -35,7 +42,7 @@ A external DALI power supply is used and all drivers are OSRAM OPPTOTRONIC.
 
 Sample Program
 --------------
-
+```c
 #include <Dali.h>
 
 /*
@@ -83,10 +90,11 @@ void loop()
 {
   serialDali();
 }
-
-Documentation
+```
+Additional Documentation
 -------------
 
-Additional documentation outlining can be found in the repository
-commands.txt - The serial commands to interact with the interface can be found in 
-dali.txt - DALI command specs
+
+[commands.txt](https://github.com/paultbarrett/bitsDALI/blob/master/dali.txt) - The serial commands to interact with the interface
+
+[dali.txt](https://github.com/paultbarrett/bitsDALI/blob/master/dali.txt) - DALI command specs
