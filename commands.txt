@@ -1,12 +1,11 @@
 Communication Protocol
 ======================
 
-The Mega 2560 DALI system acts as a DALI master so it can send/receive
+The system acts as a DALI master so it can send/receive
 DALI commands to/from its slaves according to an host system's
 commands.
 
-Here the communication protocol between the host command and the Mega
-2560 DALI system.
+Here the communication protocol between the host command and the DALI system.
 
 The communication port is a standard UART at 115200 8N1.
 
@@ -23,8 +22,6 @@ All commands/answers are strings written in ASCII terminated by
 
 For telnet compatibility the sequence "\r\n" is accepted as "\n".
 
-All numbers have base 16 (Hex).
-
 All answers are in this form:
 
 	TXXX..XXX\n
@@ -40,19 +37,25 @@ where:
 Remap Commands:
 ---------------
 
-- remap all: start remapping all slaves on all busses.
+- remap all: start remapping all slaves on bus.
 
         R\n
 
-The remap procedure needs several seconds to accomplish its duty so the host should
-check for the end by using the command "Rf" (see below).
-
-- remap unknown: start remapping slaves which haven't short address on all busses.
+- remap unknown: start remapping slaves which do not have assigned short addresses.
 
         Ru\n
 
-The remap procedure needs several seconds to accomplish its duty so the host should
-check for the end by using the command "Rf" (see below).
+- remap start: start remapping slaves all slaves starting from address XX
+
+        RsXX\n
+
+        Example - Rs23\n (Start remapping slaves starting at address 23)
+
+- remap move: change slave address from first XX to second XX
+
+        RmXXXX
+
+        Example - Rm2308\n (Remap slave address from the original address of 23 to the new address of 08)
 
 During this stage all other commands will return the error code "BUSY" (see error codes paragraph).
 
@@ -138,17 +141,21 @@ Set the arc light (or whatever) at specified power on all slave devices in a gro
 Bus Commands:
 -------------
 
-- bus detect all slaves
+- bus list of all slaves from memory
 
-        bdb\n
-
-Detect all sleave devices on bus 0xb.
+        bl0\n
 
 The answer is a 65 bytes long string where:
 
 * the first element is the return code,
 
 * the i-th element is not 0 if the i-th slave device is present on the bus. 
+
+- bus scan of all slaves
+
+        bs0\n 
+
+Initiates a scan of all slaves on the bus
 
 
 - bus 0xb set all ON
