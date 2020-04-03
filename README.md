@@ -13,15 +13,15 @@ Code has been tested on ATmega328P devices
 
 Code is available for ATmega2560 devices but is not maintained
 
-Support for other boards is depent on PCINT BUS configuration in dali.cpp ~ lines 260-350
+Support for other boards are depent on PCINT BUS configuration in dali.cpp ~ lines 260-350
 
 Usage
 -----
 
-The library exposes a basic serial command interface to control the dali bus.
+The library exposes a basic serial command interface to control the DALI bus.
 Originally the library sourced from Cosino allowed for multiple bus's however modifications for this library has only been made to reference BUS 0.
 
-If looking in incorporate this in the a Wifi based project then an Arduino Nano could be paired with an ESP32 or ESP8266 and the Nano would act as a co-processor, receiving and transmitting between devices over the hardware serial ports.
+If looking to incorporate this in a Wifi based project then an Arduino Nano could be paired with an ESP32 or ESP8266 and the Nano would act as a co-processor, receiving and transmitting between devices over the hardware serial ports.
 
 Circuitry
 ---------
