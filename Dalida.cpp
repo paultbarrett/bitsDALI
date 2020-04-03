@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2015 Luca Zulberti <luca.zulberti@cosino.io>
- * Copyright (C) 2015 HCE Engineering <info@hce-engineering.com>
+ * Copyright (C) 2020 Paul Barrett <pbarrett(at)bitsystems(dot)com(dot)au>
+ *
+ * This code is derived from https://github.com/cosino/dali2560.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This package is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this package; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "Dali.h"
@@ -157,7 +157,8 @@ uint8_t devCmd(char *msg) {
 
 	str[0] = msg[3];
 	str[1] = msg[4];
-	dev = (uint8_t) strtol(str, NULL, 16);
+	//dev = (uint8_t) strtol(str, NULL, 16);
+	dev = (uint8_t) strtol(str, NULL, 10);
 
 	// if (checkSlave(Master[bus], dev) < 0) {
 	// 	return 0x30;
@@ -207,7 +208,8 @@ uint8_t grpCmd(char *msg) {
 		return 0x03;
 
 	str[0] = msg[3];
-	grp = (uint8_t) strtol(str, NULL, 16);
+	//grp = (uint8_t) strtol(str, NULL, 16);
+	grp = (uint8_t) strtol(str, NULL, 10);
 
 	switch (msg[1]) {
 	case '1':
@@ -252,11 +254,12 @@ uint8_t busCmd(char *msg) {
 		rx_buf[0] = 0;
 		return 0x00;
 	case 'a':
-		arc = (uint8_t) strtol(msg + 3, NULL, 16);
+		//arc = (uint8_t) strtol(msg + 3, NULL, 16);
+		arc = (uint8_t) strtol(msg + 3, NULL, 10);
 		Master[bus]->sendDirect(arc, BROADCAST, grp);	/* Arc level */
 		rx_buf[0] = 0;
 		return 0x00;
-	case 'd':
+	case 'l':
 		int i, j;
 		uint8_t _slaves[8];
 		retrieveSlaves(Master[bus], _slaves);		/* Detect */
@@ -266,6 +269,9 @@ uint8_t busCmd(char *msg) {
 				rx_buf[1 + i * 8 + j] =
 				    ((_slaves[i] & (1 << j)) ? 1 : 0);
 		rx_code = STRING_CODING;
+		return 0x00;
+	case 's':
+		Master[bus]->list_dev();	/* List devices */
 		return 0x00;
 	}
 
@@ -281,12 +287,19 @@ uint8_t rmpCmd(char *msg) {
 	// Device Address
 	str[0] = msg[2];
 	str[1] = msg[3];
-	dev = (uint8_t) strtol(str, NULL, 16);
+	//dev = (uint8_t) strtol(str, NULL, 16);
+	dev = (uint8_t) strtol(str, NULL, 10);
 
 	// New Device Address
 	str2[0] = msg[4];
 	str2[1] = msg[5];
-	newdev = (uint8_t) strtol(str2, NULL, 16);
+	//newdev = (uint8_t) strtol(str2, NULL, 16);
+	newdev = (uint8_t) strtol(str2, NULL, 10);
+
+	// Catch invalid initial device short address
+	if (dev < 0 || dev > 63 || newdev < 0 || newdev > 63) {
+		return 0x30;
+	}
 
 	switch (msg[1]) {
 	case '\n':	/* Remap All */
@@ -373,7 +386,8 @@ uint8_t tstCmd(char *msg) {
 
 	str[0] = msg[3];
 	str[1] = msg[4];
-	dev = (uint8_t) strtol(str, NULL, 16);
+	//dev = (uint8_t) strtol(str, NULL, 16);
+	dev = (uint8_t) strtol(str, NULL, 10);
 
 	switch (msg[1]) {
 	case '1':

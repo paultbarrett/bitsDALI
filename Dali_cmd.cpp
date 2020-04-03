@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2015 Luca Zulberti <luca.zulberti@cosino.io>
- * Copyright (C) 2015 HCE Engineering <info@hce-engineering.com>
+ * Copyright (C) 2020 Paul Barrett <pbarrett(at)bitsystems(dot)com(dot)au>
+ *
+ * This code is derived from https://github.com/cosino/dali2560.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This package is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this package; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "Dali.h"
@@ -28,9 +28,9 @@ void Dali::remap(readdr_type remap_type) {
 	/* Set the Short Address to all devices from 0x00 */
 	n_dev = this->setDevAddresses(0x00, remap_type);
 	
-	for (int i = 0; i < 8; i++) {		/* Clean 'slaves' array */
-		this->slaves[i] = 0;
-	}
+	// for (int i = 0; i < 8; i++) {		/* Clean 'slaves' array */
+	// 	this->slaves[i] = 0;
+	// }
 
 	if (n_dev == 0xFF) {
 		/* Need a remap operation */
@@ -40,12 +40,15 @@ void Dali::remap(readdr_type remap_type) {
 		return;
 	}
 
-	/* Prepare 'slaves' array for future detects */
-	for (int i = 0; i < dev_found; i++) {
-		this->slaves[i / 8] |= 1 << (i % 8);
-	}
+	/* Scan bus */
+	list_dev();
 
-	storeSlaves(slaves);
+	// /* Prepare 'slaves' array for future detects */
+	// for (int i = 0; i < dev_found; i++) {
+	// 	this->slaves[i / 8] |= 1 << (i % 8);
+	// }
+
+	// storeSlaves(slaves);
 
 	this->dali_status &= 0xFE;		/* Finish remapping */
 }
@@ -57,12 +60,15 @@ void Dali::remapStatic(uint8_t addr, readdr_type remap_type) {
 	/* Set the Short Address to all devices starting from specific address */
 	n_dev = this->setDevAddresses(addr, remap_type);
 
+	/* Scan bus */
+	list_dev();
+
 	this->dali_status &= 0xFE;		/* Finish remapping */
 }
 
 void Dali::remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type) {
-	uint32_t addr_dev = 0x00000000;
-	uint8_t longaddress[3];
+	uint32_t addr_dev;
+	uint8_t longaddress[24];
 	this->dali_status |= 0x01;		/* Remapping */
 
 	// Reset all device
@@ -86,9 +92,13 @@ void Dali::remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type) {
 	Serial.println(longaddress[1], HEX);
 	Serial.println(longaddress[2], HEX);
 
-	this->sendExtCommand(264, longaddress[0] & 0xFF);
-	this->sendExtCommand(265, longaddress[1] & 0xFF);
-	this->sendExtCommand(266, longaddress[2] & 0xFF);
+	// Create device long address
+	addr_dev = ((uint32_t)longaddress[0]<<16) | ((uint32_t)longaddress[1] << 8) | ((uint32_t)longaddress[2]);
+
+	//Serial.println(addr_dev, HEX);
+
+	// Select long address of device
+	this->setSearch(addr_dev);
 
 	// Program new short address
 	this->sendExtCommand(267, (newAddr << 1) | 0x01);
@@ -96,6 +106,9 @@ void Dali::remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type) {
 
 	this->sendExtCommand(256, 0x00);	/* TERMINATE */
 	delay(400);
+
+	/* Scan bus */
+	list_dev();
 
 	this->dali_status &= 0xFE;		/* Finish remapping */
 }
@@ -105,13 +118,27 @@ void Dali::abort_remap(void)
 	this->dali_cmd |= 0x01;
 }
 
-/* TODO */
 void Dali::list_dev(void)
 {
-	/* 
-	 * Send the slaves[] array with slaves info
-	 * to the dalida with the standard protocol
-	 */
+	
+	for (int i = 0; i < 8; i++) {		/* Clean 'slaves' array */
+		this->slaves[i] = 0;
+	}
+
+
+	for(int i = 0; i < 64; i++){
+		int8_t data = 0;
+
+		this->sendCommand(153, SINGLE, i);	/* Query Device Tpe */
+		data = *(this->getReply());
+		Serial.println(data);
+		if (data > 0){
+			this->slaves[i / 8] |= 1 << (i % 8);
+		}
+	}
+
+	storeSlaves(slaves);
+
 }
 
 uint8_t Dali::sendDirect(uint8_t val, addr_type type_addr, uint8_t addr) {

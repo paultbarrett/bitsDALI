@@ -1,8 +1,7 @@
 /*
- * Copyright (C) 2015 Luca Zulberti <luca.zulberti@cosino.io>
- * Copyright (C) 2015 HCE Engineering <info@hce-engineering.com>
+ * Copyright (C) 2020 Paul Barrett <pbarrett(at)bitsystems(dot)com(dot)au>
  *
- * This code is derived from pq_Dali.h by http://blog.perquin.com.
+ * This code is derived from https://github.com/cosino/dali2560.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
