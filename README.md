@@ -1,7 +1,7 @@
 Arduino DALI library for ATmega328P devices
 ===========================================
 
-DALI master library derived from the Cosino DALI256 library - https://github.com/cosino/dali2560
+DALI master library derived from the Cosino DALI2560  library - https://github.com/cosino/dali2560
 
 Supported Boards
 ----------------
