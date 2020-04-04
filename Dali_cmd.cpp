@@ -88,15 +88,17 @@ void Dali::remapMove(uint8_t oldAddr, uint8_t newAddr, readdr_type remap_type) {
 	this->sendCommand(196, SINGLE, oldAddr);		/* Query Random Address Low */
 	longaddress[2] = *(this->getReply());
 
-	Serial.println(longaddress[0], HEX);
-	Serial.println(longaddress[1], HEX);
-	Serial.println(longaddress[2], HEX);
+	// Serial.println(longaddress[0], HEX);
+	// Serial.println(longaddress[1], HEX);
+	// Serial.println(longaddress[2], HEX);
 
 	// Create device long address
 	addr_dev = ((uint32_t)longaddress[0]<<16) | ((uint32_t)longaddress[1] << 8) | ((uint32_t)longaddress[2]);
 
-	//Serial.println(addr_dev, HEX);
-
+	if (debugMode <= 3 && debugMode != 0) {
+		Serial.print("DEBUG - Long Addr: ");
+		Serial.println(addr_dev, HEX);
+	}
 	// Select long address of device
 	this->setSearch(addr_dev);
 
@@ -131,7 +133,12 @@ void Dali::list_dev(void)
 
 		this->sendCommand(153, SINGLE, i);	/* Query Device Tpe */
 		data = *(this->getReply());
-		Serial.println(data);
+		if (debugMode <= 3 && debugMode != 0) {
+			Serial.print("DEBUG - Addr ");
+			Serial.print(i);
+			Serial.print(" : ");
+			Serial.println(data);
+		}
 		if (data > 0){
 			this->slaves[i / 8] |= 1 << (i % 8);
 		}

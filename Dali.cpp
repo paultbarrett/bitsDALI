@@ -281,7 +281,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 				break;
 			}
 		}
-		Serial.println(" * TX OK");
+		if (debugMode <= 3 && debugMode != 0) Serial.println(" * TX INIT");
 	}
 
 	// //setup rx - Arduino Mega
@@ -335,7 +335,7 @@ void Dali::begin(uint8_t tx_pin, uint8_t rx_pin) {
 			PCMSK1 |= (1 << (this->rx_pin - 14));
 			IsrPCINT1Hook = this; //setup pinchange interrupt hook
 		}
-		if (debugMode <= 3 && debugMode != 0) Serial.println("DALI Init RX");
+		if (debugMode <= 3 && debugMode != 0) Serial.println(" * RX INIT");
   	}
 
 	uint8_t i;

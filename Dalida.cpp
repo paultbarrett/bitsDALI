@@ -33,12 +33,11 @@ uint8_t action(char *msg);
 void storeSlaves(uint8_t * slaves);
 void retrieveSlaves(Dali * dali, uint8_t * slaves);
 int checkSlave(Dali * dali, uint8_t dev);
-int infoDev(Dali * dali, uint8_t dev_type, uint8_t dev, uint8_t * info_buf);
 
 Dali *Master[2];
 uint8_t bytes_rx;
 char msg[10];
-uint8_t rx_buf[100];	/* First byte used for lenght */
+uint8_t rx_buf[100];	/* First byte used for length */
 uint8_t rx_code;
 enum rx_codes {STRING_CODING, BIN_CODING};
 
@@ -92,25 +91,29 @@ void serialDali_rx(uint8_t errn, uint8_t * data, uint8_t n) {
 		buf[1 + n_char] = '\r';
 		buf[2 + n_char] = '\n';
 		Serial.write(buf, n_char + 3);
+
 	} else {
 		switch (errn) {
 		case 0x01:
-			Serial.println("E01 - Invalid Command");
+			Serial.println(F("E01 - Invalid Command"));
 			break;
 		case 0x02:
-			Serial.println("E02 - Command Not Implemented");
+			Serial.println(F("E02 - Command Not Implemented"));
 			break;
 		case 0x03:
-			Serial.println("E03 - DALI BUS Busy");
+			Serial.println(F("E03 - DALI BUS Busy"));
 			break;
 		case 0x20:
-			Serial.println("E20 - Invalid BUS ID");
+			Serial.println(F("E20 - Invalid BUS ID"));
 			break;
 		case 0x30:
-			Serial.println("E30 - Invalid DEV Address");
+			Serial.println(F("E30 - Invalid DEV Address"));
 			break;
 		case 0x90:
-			Serial.println("E90 - Timeout");
+			Serial.println(F("E90 - Timeout"));
+			break;
+		case 0x99:
+			Serial.println(F(" "));
 			break;
 		}
 	}
@@ -131,7 +134,7 @@ uint8_t exeCmd(char *msg) {
 	case 'b':
 		return busCmd(msg);
 		break;
-	case 'R':
+	case 'r':
 		return rmpCmd(msg);
 		break;
 	case 'c':
@@ -140,6 +143,12 @@ uint8_t exeCmd(char *msg) {
 	case 't':
 		return tstCmd(msg);
 		break;
+	case '?':
+		Serial.println(F("========================== HELP =========================="));
+		Serial.println(F("    d:Device | g:Group | b:Bus | r:Remap | c:Configure"));
+		Serial.println(F("=========================================================="));
+		return 0x99;
+		break;
 	}
 	return 0x01;	/* Syntax error */
 }
@@ -147,126 +156,197 @@ uint8_t exeCmd(char *msg) {
 uint8_t devCmd(char *msg) {
 	uint8_t bus, dev, arc;
 	char str[] = "00";
+	char str2[] = "000";
+	uint8_t cfg_buf[5];
 
-	if (msg[2] == '0') {
-		bus = 0;
-	} else if (msg[2] == '1') {
-		bus = 1;
-	} else {
-		return 0x20;
-	}
-	if ((Master[bus]->dali_status & 0x01) == 1) {
+	if ((Master[0]->dali_status & 0x01) == 1) {
 		return 0x03;
 	}
 
-	str[0] = msg[3];
-	str[1] = msg[4];
-	//dev = (uint8_t) strtol(str, NULL, 16);
+	str[0] = msg[2];
+	str[1] = msg[3];
 	dev = (uint8_t) strtol(str, NULL, 10);
 
-	// if (checkSlave(Master[bus], dev) < 0) {
-	// 	return 0x30;
-	// }
+	str2[0] = msg[4];
+	str2[1] = msg[5];
+	str2[2] = msg[6];
+	arc = (uint8_t) strtol(str2, NULL, 10);
 
 	switch (msg[1]) {
 	case '1':
-		Master[bus]->sendCommand(5, SINGLE, dev);	/* ON */
+		Master[0]->sendCommand(5, SINGLE, dev);	/* ON */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case '0':
-		Master[bus]->sendCommand(0, SINGLE, dev);	/* OFF */
+		Master[0]->sendCommand(0, SINGLE, dev);	/* OFF */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case 'a':
-		arc = (uint8_t) strtol(msg + 5, NULL, 16);
-		Master[bus]->sendDirect(arc, SINGLE, dev);	/* Arc level */
+		Master[0]->sendDirect(arc, SINGLE, dev);	/* Arc level */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case 'i':
-		int ret, dev_type;
-		Master[bus]->sendCommand(153, SINGLE, dev);	/* Get DEV type */
-		dev_type = *(Master[bus]->getReply());
-		rx_buf[0] = infoDev(Master[bus], dev_type, dev, rx_buf + 1);
-		rx_code = BIN_CODING;
+
+		// Return information for all active slaves
+		if (msg[2] == 'a') {
+
+			for(int i = 0;i < 64; i++) {
+
+				int8_t data = 0;
+				int dev = i;
+
+				Master[0]->sendCommand(153, SINGLE, i);	/* Query Device Type */
+				data = *(Master[0]->getReply());
+				
+				if (data > 0) {
+					Master[0]->sendCommand(162, SINGLE, dev);	/* Query MIN LEVEL */
+					cfg_buf[0] = *(Master[0]->getReply());
+					Master[0]->sendCommand(161, SINGLE, dev);	/* Query MAX LEVEL */
+					cfg_buf[1] = *(Master[0]->getReply());
+					Master[0]->sendCommand(164, SINGLE, dev);	/* Query SYSFAIL LEVEL */
+					cfg_buf[2] = *(Master[0]->getReply());
+					Master[0]->sendCommand(163, SINGLE, dev);	/* Query POWERON LEVEL */
+					cfg_buf[3] = *(Master[0]->getReply());
+					Master[0]->sendCommand(165, SINGLE, dev);	/* Query SYSFAIL LEVEL */
+					cfg_buf[4] = *(Master[0]->getReply());
+
+
+					Serial.print(dev);  
+					Serial.print(" ");Serial.print(cfg_buf[0], DEC);
+					Serial.print(" ");Serial.print(cfg_buf[1], DEC);
+					Serial.print(" ");Serial.print(cfg_buf[2], DEC);
+					Serial.print(" ");Serial.print(cfg_buf[3], DEC);
+					Serial.print(" ");Serial.print(cfg_buf[4], HEX);     
+					Serial.println();
+
+					delay(50);
+				}
+
+			}
+			rx_buf[0] = 0;
+			return 0x00;
+		}
+
+		// Return individual slave information
+
+		Master[0]->sendCommand(162, SINGLE, dev);	/* Query MIN LEVEL */
+		cfg_buf[0] = *(Master[0]->getReply());
+		Master[0]->sendCommand(161, SINGLE, dev);	/* Query MAX LEVEL */
+		cfg_buf[1] = *(Master[0]->getReply());
+		Master[0]->sendCommand(164, SINGLE, dev);	/* Query SYSFAIL LEVEL */
+		cfg_buf[2] = *(Master[0]->getReply());
+		Master[0]->sendCommand(163, SINGLE, dev);	/* Query POWERON LEVEL */
+		cfg_buf[3] = *(Master[0]->getReply());
+		Master[0]->sendCommand(165, SINGLE, dev);	/* Query SYSFAIL LEVEL */
+		cfg_buf[4] = *(Master[0]->getReply());
+
+
+		Serial.print(dev);  
+		Serial.print(" ");Serial.print(cfg_buf[0], DEC);
+		Serial.print(" ");Serial.print(cfg_buf[1], DEC);
+		Serial.print(" ");Serial.print(cfg_buf[2], DEC);
+		Serial.print(" ");Serial.print(cfg_buf[3], DEC);
+		Serial.print(" ");Serial.print(cfg_buf[4], HEX);     
+		Serial.println();
+
+		rx_buf[0] = 0;	
 		return 0x00;
-	case 'c':
-		/* Configure device - to implement */
-		return 0x02;
+
+	case '?':
+		Serial.println(F("================================= DEVICE HELP ================================"));
+		Serial.println(F("1XX:ON | 0XX:OFF | aYYY:ARC | iXX:Info (Specific Slave) | ia:Info (All Slaves)"));
+		Serial.println(F("               XX = Slave ID 0-63 | YYY = ARC Brightness 0-254                "));                
+		Serial.println(F("=============================================================================="));
+		return 0x99;
+		break;
 	}
 
 	return 0x01;
 }
 
 uint8_t grpCmd(char *msg) {
-	uint8_t bus, grp, arc;
-	char str[] = "0";
-
-	if (msg[2] == '0') {
-		bus = 0;
-	} else if (msg[2] == '1') {
-		bus = 1;
-	} else {
-		return 0x20;
-	}	
-	if ((Master[bus]->dali_status & 0x01) == 1)
+	uint8_t grp, arc;
+	char str[] = "00";
+	char str2[] = "000";
+	
+	if ((Master[0]->dali_status & 0x01) == 1)
 		return 0x03;
 
-	str[0] = msg[3];
-	//grp = (uint8_t) strtol(str, NULL, 16);
+	str[0] = msg[2];
+	str[1] = msg[3];
 	grp = (uint8_t) strtol(str, NULL, 10);
+
+	str2[0] = msg[4];
+	str2[1] = msg[5];
+	str2[2] = msg[6];
+	arc = (uint8_t) strtol(str2, NULL, 10);
 
 	switch (msg[1]) {
 	case '1':
-		Master[bus]->sendCommand(5, GROUP, grp);	/* ON */
+		Master[0]->sendDirect(5, GROUP, grp);	/* ON */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case '0':
-		Master[bus]->sendCommand(0, GROUP, grp);	/* OFF */
+		Master[0]->sendDirect(0, GROUP, grp);	/* OFF */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case 'a':
-		arc = (uint8_t) strtol(msg + 4, NULL, 16);
-		Master[bus]->sendDirect(arc, GROUP, grp);	/* Arc level */
+		//arc = (uint8_t) strtol(msg + 4, NULL, 16);
+		Master[0]->sendDirect(arc, GROUP, grp);	/* Arc level */
 		rx_buf[0] = 0;
 		return 0x00;
+
+	case '?':
+		Serial.println(F("================================= GROUP HELP ================================="));
+		Serial.println(F("                          1XX:ON | 0XX:OFF | aYYY:ARC                         "));
+		Serial.println(F("               XX = Slave ID 0-63 | YYY = ARC Brightness 0-254                "));                
+		Serial.println(F("=============================================================================="));
+		return 0x99;
+		break;
 	}
 
 	return 0x01;
 }
 
 uint8_t busCmd(char *msg) {
-	uint8_t bus, grp, arc;
+	uint8_t grp, arc;
 	char str[] = "00";
+	int i, j;
+	uint8_t _slaves[8];
 
-	if (msg[2] == '0') {
-		bus = 0;
-	} else if (msg[2] == '1') {
-		bus = 1;
-	} else {
-		return 0x20;
-	}
-	if ((Master[bus]->dali_status & 0x01) == 1) {
+	str[0] = msg[2];
+	str[1] = msg[3];
+	str[2] = msg[4];
+	arc = (uint8_t) strtol(str, NULL, 10);
+
+	if ((Master[0]->dali_status & 0x01) == 1) {
 		return 0x03;
 	}
 	switch (msg[1]) {
 	case '1':
-		Master[bus]->sendCommand(5, BROADCAST, grp);	/* ON */
+		Master[0]->sendCommand(5, BROADCAST, grp);	/* ON */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case '0':
-		Master[bus]->sendCommand(0, BROADCAST, grp);	/* OFF */
+		Master[0]->sendCommand(0, BROADCAST, grp);	/* OFF */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case 'a':
-		//arc = (uint8_t) strtol(msg + 3, NULL, 16);
-		arc = (uint8_t) strtol(msg + 3, NULL, 10);
-		Master[bus]->sendDirect(arc, BROADCAST, grp);	/* Arc level */
+		//arc = (uint8_t) strtol(msg + 3, NULL, 10);
+		Master[0]->sendDirect(arc, BROADCAST, grp);	/* Arc level */
 		rx_buf[0] = 0;
 		return 0x00;
+
 	case 'l':
-		int i, j;
-		uint8_t _slaves[8];
-		retrieveSlaves(Master[bus], _slaves);		/* Detect */
+
+		retrieveSlaves(Master[0], _slaves);
 		rx_buf[0] = 64;
 		for (i = 0; i < 8; i++)
 			for (j = 0; j < 8; j++)
@@ -274,9 +354,26 @@ uint8_t busCmd(char *msg) {
 				    ((_slaves[i] & (1 << j)) ? 1 : 0);
 		rx_code = STRING_CODING;
 		return 0x00;
+
 	case 's':
-		Master[bus]->list_dev();	/* List devices */
+		Master[0]->list_dev();	/* Scan devices */
+
+		retrieveSlaves(Master[0], _slaves);
+		rx_buf[0] = 64;
+		for (i = 0; i < 8; i++)
+			for (j = 0; j < 8; j++)
+				rx_buf[1 + i * 8 + j] =
+				    ((_slaves[i] & (1 << j)) ? 1 : 0);
+		rx_code = STRING_CODING;
 		return 0x00;
+
+	case '?':
+		Serial.println(F("================================== BUS HELP =================================="));
+		Serial.println(F("         1XX:ON | 0XX:OFF | aYYY:ARC | l:List Slaves | s:Scan Slaves          "));
+		Serial.println(F("               XX = Slave ID 0-63 | YYY = ARC Brightness 0-254                "));                
+		Serial.println(F("=============================================================================="));
+		return 0x99;
+		break;
 	}
 
 	return 0x01;
@@ -306,7 +403,7 @@ uint8_t rmpCmd(char *msg) {
 	}
 
 	switch (msg[1]) {
-	case '\n':	/* Remap All */
+	case 'a':	/* Remap All */
 		if ((Master[0]->dali_status & 0x01) == 1) {
 			return 0x03;
 		}
@@ -328,7 +425,7 @@ uint8_t rmpCmd(char *msg) {
 		}
 		return 0xFF;	/* Remap finished. Do not send anything. */
 
-	case 'f':	/* Check Remap status */
+	case 'p':	/* Check Remap status */
 		if ((Master[0]->dali_status & 0x01) == 1) {
 			rx_buf[1] = (dev_found * 100) / 64;
 		} else {
@@ -365,6 +462,14 @@ uint8_t rmpCmd(char *msg) {
 		}
 		rx_buf[0] = 0;
 		return 0x00;
+
+	case '?':
+		Serial.println(F("=============================================== REMAP HELP ================================================"));
+		Serial.println(F(" a:Remap All | u:Remap Unknown | p:Remap Progress | sXX:Remap All From | mYYZZ:Scan Slaves | A:Abort Remap "));
+		Serial.println(F("                    XX = Start Slave ID 0-63 | YY = Current Slave ID | ZZ = New Slave ID                   "));                
+		Serial.println(F("==========================================================================================================="));
+		return 0x99;
+		break;
 	}
 
 	return 0x01;
@@ -399,6 +504,8 @@ uint8_t cfgCmd(char *msg) {
 
 		// Store DTR as MIN LEVEL
 		Master[0]->sendCommand(43, SINGLE, dev);
+ 		
+		rx_buf[0] = 0;
 		return 0x00;
 	
 	case 'x': 
@@ -408,6 +515,8 @@ uint8_t cfgCmd(char *msg) {
 
 		// Store DTR as MAX LEVEL
 		Master[0]->sendCommand(42, SINGLE, dev);
+
+		rx_buf[0] = 0;
 		return 0x00;
 
 	case 'f': 
@@ -417,6 +526,8 @@ uint8_t cfgCmd(char *msg) {
 
 		// Store DTR as SYS FAIL LEVEL
 		Master[0]->sendCommand(44, SINGLE, dev);
+
+		rx_buf[0] = 0;
 		return 0x00;
 
 	case 'p': 
@@ -426,6 +537,8 @@ uint8_t cfgCmd(char *msg) {
 
 		// Store DTR as PWR ON LEVEL
 		Master[0]->sendCommand(45, SINGLE, dev);
+
+		rx_buf[0] = 0;
 		return 0x00;
 
 	case 't': 
@@ -435,6 +548,8 @@ uint8_t cfgCmd(char *msg) {
 
 		// Store DTR as FADE TIME
 		Master[0]->sendCommand(46, SINGLE, dev);
+
+		rx_buf[0] = 0;
 		return 0x00;
 
 	case 'r': 
@@ -444,7 +559,17 @@ uint8_t cfgCmd(char *msg) {
 
 		// Store DTR as FADE RATE
 		Master[0]->sendCommand(47, SINGLE, dev);
+
+		rx_buf[0] = 0;
 		return 0x00;
+
+	case '?':
+		Serial.println(F("====================================================== CONFIG HELP ======================================================="));
+		Serial.println(F(" mXXYYY:MIN Level | xXXYYY:MAX Level | fXXYYY:SYSFAIL Level | pXXYYY:PWRFAIL Level | tXXYYY:Fade Time | rXXYYY:Fade Rate "));
+		Serial.println(F("                                          XX = Start Slave ID 0-63 | YYY = Value                                         "));                
+		Serial.println(F("========================================================================================================================="));
+		return 0x99;
+		break;
 	}
 
 	 // E01 - Invalid Command
@@ -452,25 +577,17 @@ uint8_t cfgCmd(char *msg) {
 }
 
 uint8_t tstCmd(char *msg) {
-	uint8_t bus, dev, arc;
+	uint8_t dev, arc;
 	char str[] = "00";
 
-	// Set BUS ID
-	if (msg[2] == '0') {
-		bus = 0;
-	} else if (msg[2] == '1') {
-		bus = 1;
-	} else {
-		return 0x20;
-	}
 
 	// Check BUS State
-	if ((Master[bus]->dali_status & 0x01) == 1) {
+	if ((Master[0]->dali_status & 0x01) == 1) {
 		return 0x03;
 	}
 
-	str[0] = msg[3];
-	str[1] = msg[4];
+	str[0] = msg[2];
+	str[1] = msg[3];
 	//dev = (uint8_t) strtol(str, NULL, 16);
 	dev = (uint8_t) strtol(str, NULL, 10);
 
@@ -492,15 +609,8 @@ void storeSlaves(uint8_t * slaves) {
 }
 
 void retrieveSlaves(Dali * dali, uint8_t * slaves) {
-	int base_addr;
+	int base_addr = 0x0000;
 
-	if (dali == Master[0]) {
-		base_addr = 0x0000;
-	} else if (dali == Master[1]){ 
-		base_addr = 0x0100;
-	} else {
-		return;
-	}
 	for (int i = 0; i < 8; i++) {
 		slaves[i] = eeprom_read_byte((unsigned char *)(base_addr + i));
 		dali->slaves[i] = slaves[i];
@@ -518,22 +628,5 @@ int checkSlave(Dali * dali, uint8_t dev) {
 		return 0;
 	} else {
 		return -1;
-	}
-}
-
-int infoDev(Dali * dali, uint8_t dev_type, uint8_t dev, uint8_t * info_buf) {
-	switch (dev_type) {
-	case LED_MODULE:
-		info_buf[0] = dev_type;
-		dali->sendCommand(162, SINGLE, dev);	/* Query MIN LEVEL */
-		info_buf[1] = *(dali->getReply());
-		dali->sendCommand(161, SINGLE, dev);	/* Query MAX LEVEL */
-		info_buf[2] = *(dali->getReply());
-		dali->sendCommand(160, SINGLE, dev);	/* Query actual LEVEL */
-		info_buf[3] = *(dali->getReply());
-		return 4;
-	default:
-		info_buf[0] = dev_type;
-		return 1;
 	}
 }
