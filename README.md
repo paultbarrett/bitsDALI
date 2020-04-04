@@ -99,6 +99,6 @@ Additional Documentation
 -------------
 
 
-[commands.txt](https://github.com/paultbarrett/bitsDALI/blob/master/commands.txt) - The serial commands to interact with the interface
+[COMMANDS](https://github.com/paultbarrett/bitsDALI/blob/master/COMMANDS.MD) - The serial commands to interact with the interface
 
 [dali.txt](https://github.com/paultbarrett/bitsDALI/blob/master/dali.txt) - DALI command specs
