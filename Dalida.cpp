@@ -27,6 +27,7 @@ uint8_t devCmd(char *msg);
 uint8_t grpCmd(char *msg);
 uint8_t busCmd(char *msg);
 uint8_t rmpCmd(char *msg);
+uint8_t cfgCmd(char *msg);
 uint8_t tstCmd(char *msg);
 uint8_t action(char *msg);
 void storeSlaves(uint8_t * slaves);
@@ -132,6 +133,9 @@ uint8_t exeCmd(char *msg) {
 		break;
 	case 'R':
 		return rmpCmd(msg);
+		break;
+	case 'c':
+		return cfgCmd(msg);
 		break;
 	case 't':
 		return tstCmd(msg);
@@ -363,6 +367,87 @@ uint8_t rmpCmd(char *msg) {
 		return 0x00;
 	}
 
+	return 0x01;
+}
+
+uint8_t cfgCmd(char *msg) {
+	uint8_t dev, data;
+	char str[] = "00";
+	char str2[] = "000";
+
+	// Check BUS State
+	if ((Master[0]->dali_status & 0x01) == 1) {
+		return 0x03;
+	}
+
+	// Extract device ID
+	str[0] = msg[2];
+	str[1] = msg[3];
+	dev = (uint8_t) strtol(str, NULL, 10);
+
+	// Extract data
+	str2[0] = msg[4];
+	str2[1] = msg[5];
+	str2[2] = msg[6];
+	data = (uint8_t) strtol(str2, NULL, 10);
+
+	switch (msg[1]) {
+	case 'm': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Store DTR as MIN LEVEL
+		Master[0]->sendCommand(43, SINGLE, dev);
+		return 0x00;
+	
+	case 'x': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Store DTR as MAX LEVEL
+		Master[0]->sendCommand(42, SINGLE, dev);
+		return 0x00;
+
+	case 'f': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Store DTR as SYS FAIL LEVEL
+		Master[0]->sendCommand(44, SINGLE, dev);
+		return 0x00;
+
+	case 'p': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Store DTR as PWR ON LEVEL
+		Master[0]->sendCommand(45, SINGLE, dev);
+		return 0x00;
+
+	case 't': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Store DTR as FADE TIME
+		Master[0]->sendCommand(46, SINGLE, dev);
+		return 0x00;
+
+	case 'r': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Store DTR as FADE RATE
+		Master[0]->sendCommand(47, SINGLE, dev);
+		return 0x00;
+	}
+
+	 // E01 - Invalid Command
 	return 0x01;
 }
 

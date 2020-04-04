@@ -76,6 +76,8 @@ Ask for the remapping procedure abort sequence.
 
 If the master returns an error it means that the abort procedure is failed and it must be issued again.
 
+Configuration Commands
+-----------------------
 
 Single Device Commands:
 -----------------------
