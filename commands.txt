@@ -79,6 +79,42 @@ If the master returns an error it means that the abort procedure is failed and i
 Configuration Commands
 -----------------------
 
+- configure minimum level (0-254)
+
+        cmAAXXX
+
+         Example - cm16090\n (Set minimum level of 90 out of 254 for address 16)
+
+- configure maximum level (0-254)
+
+        cxAAXXX
+
+         Example - cx16250\n (Set maximum level of 250 out of 254 for address 16)
+
+- configure system fail level (0-254)
+
+        cfAAXXX
+
+         Example - cf16000\n (Set system fail level of 000 (off) out of 254 for address 16)
+
+- configure power on level (0-254)
+
+        cfAAXXX
+
+         Example - cp16000\n (Set poweron level of 000 (off) out of 254 for address 16)
+
+- configure fade time (0-15)
+
+        ctAAXXX
+
+         Example - ct16002\n (Set fade time to 2 for address 16)
+
+- configure fade rate (1-15)
+
+        crAAXXX
+
+         Example - cr16007\n (Set fade rate to 7 for address 16)
+
 Single Device Commands:
 -----------------------
 
