@@ -100,7 +100,7 @@ Configuration Commands
 
 - configure power on level value YYY at address XX
 
-        cfXXYYY\n
+        cpXXYYY\n
 
 - configure fade time value YYY at address XX
 
