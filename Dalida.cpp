@@ -563,9 +563,21 @@ uint8_t cfgCmd(char *msg) {
 		rx_buf[0] = 0;
 		return 0x00;
 
+	case 'z': 
+		
+		// Set data in DTR on bus
+		Master[0]->sendExtCommand(257, data);
+
+		// Reset driver
+		Master[0]->sendCommand(32, SINGLE, dev);
+
+		rx_buf[0] = 0;
+		return 0x00;
+
 	case '?':
 		Serial.println(F("====================================================== CONFIG HELP ======================================================="));
 		Serial.println(F(" mXXYYY:MIN Level | xXXYYY:MAX Level | fXXYYY:SYSFAIL Level | pXXYYY:PWRFAIL Level | tXXYYY:Fade Time | rXXYYY:Fade Rate "));
+		Serial.println(F("                                                   zXX:Reset Driver                                                      "));     
 		Serial.println(F("                                          XX = Start Slave ID 0-63 | YYY = Value                                         "));                
 		Serial.println(F("========================================================================================================================="));
 		return 0x99;
